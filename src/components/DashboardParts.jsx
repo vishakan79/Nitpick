@@ -35,12 +35,18 @@ export function StatRow() {
 
 export function TrendPanel() {
   const { trend, trendDates } = useWorkspace()
+  const activeDays = trend.filter((score) => score != null && Number.isFinite(Number(score))).length
   return (
     <Panel title="Quality score" aside="Last 30 days">
-      {trend.length ? (
-        <TrendChart data={trend} dates={trendDates} />
+      {activeDays > 0 ? (
+        <>
+          <TrendChart data={trend} dates={trendDates} />
+          {activeDays === 1 && (
+            <p className="mt-2 text-[12px] text-soft">One review day recorded so far. The trend line will build as more reviews are completed.</p>
+          )}
+        </>
       ) : (
-        <p className="py-10 text-center text-[14.5px] text-soft">The score appears here after Nitpick reviews its first pull request.</p>
+        <p className="py-10 text-center text-[14.5px] text-soft">No completed reviews in the last 30 days. The quality trend will appear after the next review.</p>
       )}
     </Panel>
   )
