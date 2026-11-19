@@ -106,12 +106,19 @@ public class AssistantController {
                 + "\n\nRECENT CONVERSATION (untrusted context):\n" + conversation
                 + "\nUSER QUESTION:\n" + message;
 
-        String raw = groq.complete(SYSTEM_PROMPT, userPrompt);
-        JsonNode parsed = mapper.readTree(raw);
-        String reply = parsed.path("reply").asText("").trim();
-        if (reply.isEmpty()) {
-            throw new IllegalStateException("The AI assistant returned an empty response.");
+        try {
+            String raw = groq.complete(SYSTEM_PROMPT, userPrompt);
+            JsonNode parsed = mapper.readTree(raw);
+            String reply = parsed.path("reply").asText("").trim();
+            if (reply.isEmpty()) {
+                throw new IllegalStateException("The AI assistant returned an empty response.");
+            }
+            return ResponseEntity.ok(Map.of("reply", reply));
+        } catch (Exception e) {
+            org.slf4j.LoggerFactory.getLogger(AssistantController.class)
+                    .warn("Assistant request failed: {}", e.getClass().getSimpleName());
+            return ResponseEntity.status(502).body(
+                    Map.of("error", "Nitpick Assistant is temporarily unavailable. Please retry in a moment."));
         }
-        return ResponseEntity.ok(Map.of("reply", reply));
     }
 }
