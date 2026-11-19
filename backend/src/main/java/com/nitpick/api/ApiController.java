@@ -55,6 +55,7 @@ public class ApiController {
                 ),
                 user_pulls AS (
                     SELECT p.* FROM pulls p JOIN owned_repos r ON r.id=p.repo_id
+                    WHERE p.created_at >= now() - interval '30 days'
                 ),
                 user_findings AS (
                     SELECT f.* FROM findings f JOIN user_pulls p ON p.id=f.pull_id
