@@ -61,7 +61,8 @@ function normalize(d) {
   const s = d.stats
   const n = (v) => Number(v) || 0
   const total = n(s.critical) + n(s.warnings) + n(s.tips)
-  const scores = d.stats.trend.map((t) => t.score)
+  const trendRows = d.stats.trend.filter((t) => t.score != null)
+  const scores = trendRows.map((t) => Number(t.score))
   return {
     stats: [
       { label: 'Pull requests reviewed', to: n(s.reviewed), note: `${d.pulls.length} pull requests seen so far` },
@@ -74,8 +75,8 @@ function normalize(d) {
       { sev: 'warning', n: n(s.warnings) },
       { sev: 'suggestion', n: n(s.tips) },
     ],
-    trend: scores.some((x) => x != null) ? fillGaps(scores) : [],
-    trendDates: d.stats.trend.map((t) => t.date),
+    trend: scores,
+    trendDates: trendRows.map((t) => t.date),
     prs: d.pulls.map((p) => ({ ...p, when: ago(p.when), c: n(p.c), w: n(p.w), s: n(p.s) })),
     findings: d.findings.map((f) => ({
       id: f.id,
