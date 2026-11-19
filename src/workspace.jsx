@@ -25,6 +25,7 @@ function useDemo() {
   const [rules, setRules] = useState(sample.initialRules)
   const [repos, setRepos] = useState(sample.repos.map((r) => ({ name: `arun/${r.name}`, on: r.on })))
   const [settings, setSettings] = useState({ lang: 'en', strictness: 'balanced', failCheck: false })
+  const [resolvedFindings, setResolvedFindings] = useState({})
   return useMemo(
     () => ({
       demo: true,
@@ -39,7 +40,7 @@ function useDemo() {
       trend: sample.trend,
       trendDates: null,
       prs: sample.prs,
-      findings: sample.findings,
+      findings: sample.findings.map((f) => ({ ...f, resolved: Boolean(resolvedFindings[f.id]) })),
       rules,
       repos,
       settings,
@@ -48,9 +49,10 @@ function useDemo() {
       deleteRule: async (id) => setRules((rs) => rs.filter((x) => x.id !== id)),
       saveSettings: async (s) => setSettings(s),
       toggleRepo: async (name, on) => setRepos((rs) => rs.map((x) => (x.name === name ? { ...x, on } : x))),
+      resolveFinding: async (id, resolved) => setResolvedFindings((rs) => ({ ...rs, [id]: resolved })),
       loadPull: async () => null,
     }),
-    [rules, repos, settings],
+    [rules, repos, settings, resolvedFindings],
   )
 }
 
@@ -86,6 +88,7 @@ function normalize(d) {
       msg: f.en,
       ta: f.ta,
       fix: f.fix,
+      resolved: Boolean(f.resolved),
     })),
     rules: d.rules.map((r) => ({ id: r.id, text: r.description ? `${r.name}. ${r.description}` : r.name, on: r.enabled })),
     repos: d.repos.map((r) => ({ name: r.fullName, on: r.enabled })),
@@ -154,6 +157,7 @@ function useLive() {
       deleteRule: (id) => act(() => api(`/api/rules/${id}`, { method: 'DELETE' })),
       saveSettings: (s) => act(() => api('/api/settings', { method: 'PUT', body: s })),
       toggleRepo: (name, on) => act(() => api('/api/repos/toggle', { method: 'POST', body: { fullName: name, enabled: on } })),
+      resolveFinding: (id, resolved) => act(() => api(`/api/findings/${id}`, { method: 'PUT', body: { resolved } })),
       loadPull: (id) => api(`/api/pulls/${id}`),
     }
   }, [state, act])
