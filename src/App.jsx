@@ -61,7 +61,14 @@ export default function App() {
     <>
       <ScrollToTop />
       <Routes>
-        <Route path="/" element={<Landing />} />
+        <Route
+          path="/"
+          element={
+            <WorkspaceProvider demo>
+              <Landing />
+            </WorkspaceProvider>
+          }
+        />
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/app" element={<Shell demo={false} />}>
