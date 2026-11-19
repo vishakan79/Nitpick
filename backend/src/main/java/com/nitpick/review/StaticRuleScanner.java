@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
  * These supplement Groq; they are deliberately narrow to avoid noisy findings.
  */
 public final class StaticRuleScanner {
-    private static final Pattern ADDED_LINE = Pattern.compile("^L(\\d+)\\+\\s?(.*)$");
+    private static final Pattern DIFF_LINE = Pattern.compile("^L(\\d+)(\\+|  )\\s?(.*)$");
     private static final Pattern SQL_KEYWORD = Pattern.compile(
             "(?i)\\b(SELECT|INSERT\\s+INTO|UPDATE\\s+\\w+|DELETE\\s+FROM)\\b");
     private static final Pattern CONCATENATED_VALUE = Pattern.compile(
@@ -31,14 +31,15 @@ public final class StaticRuleScanner {
         int braceDepth = 0;
         Deque<Integer> loopDepths = new ArrayDeque<>();
         for (String raw : labelledDiff.split("\\R")) {
-            Matcher lineMatcher = ADDED_LINE.matcher(raw);
+            Matcher lineMatcher = DIFF_LINE.matcher(raw);
             if (!lineMatcher.matches()) continue;
 
             int lineNumber = Integer.parseInt(lineMatcher.group(1));
-            String code = lineMatcher.group(2);
+            boolean added = "+".equals(lineMatcher.group(2));
+            String code = lineMatcher.group(3);
 
-            // Only flag a query when the SQL text itself is visibly concatenated with a variable.
-            if (code.indexOf(34) >= 0 && SQL_KEYWORD.matcher(code).find()
+            // Only flag SQL construction on lines added in this pull request.
+            if (added && code.indexOf(34) >= 0 && SQL_KEYWORD.matcher(code).find()
                     && CONCATENATED_VALUE.matcher(code).find()) {
                 findings.add(new Finding(
                         lineNumber,
@@ -49,6 +50,7 @@ public final class StaticRuleScanner {
                         "Use a PreparedStatement with ? placeholders and bind each value with setString/setInt; do not concatenate values into SQL."));
             }
 
+            // Context lines matter: a new database call can be inside an unchanged loop.
             boolean startsLoop = LOOP.matcher(code).find();
             int opens = count(code, '{');
             int closes = count(code, '}');
@@ -59,7 +61,7 @@ public final class StaticRuleScanner {
                 braceDepth = Math.max(0, braceDepth + opens - closes);
             }
 
-            if (!loopDepths.isEmpty() && DATABASE_CALL.matcher(code).find()) {
+            if (added && !loopDepths.isEmpty() && DATABASE_CALL.matcher(code).find()) {
                 findings.add(new Finding(
                         lineNumber,
                         "warning",
