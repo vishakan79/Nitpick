@@ -25,6 +25,7 @@ function useDemo() {
   const [rules, setRules] = useState(sample.initialRules)
   const [repos, setRepos] = useState(sample.repos.map((r) => ({ name: `arun/${r.name}`, on: r.on })))
   const [settings, setSettings] = useState({ lang: 'en', strictness: 'balanced', failCheck: false })
+  const [resolvedFindings, setResolvedFindings] = useState({})
   return useMemo(
     () => ({
       demo: true,
@@ -39,7 +40,7 @@ function useDemo() {
       trend: sample.trend,
       trendDates: null,
       prs: sample.prs,
-      findings: sample.findings,
+      findings: sample.findings.map((f) => ({ ...f, resolved: Boolean(resolvedFindings[f.id]) })),
       rules,
       repos,
       settings,
@@ -48,9 +49,11 @@ function useDemo() {
       deleteRule: async (id) => setRules((rs) => rs.filter((x) => x.id !== id)),
       saveSettings: async (s) => setSettings(s),
       toggleRepo: async (name, on) => setRepos((rs) => rs.map((x) => (x.name === name ? { ...x, on } : x))),
+      resolveFinding: async (id, resolved) => setResolvedFindings((rs) => ({ ...rs, [id]: resolved })),
+      retryPull: async () => { throw new Error('Sign in with GitHub to retry a review.') },
       loadPull: async () => null,
     }),
-    [rules, repos, settings],
+    [rules, repos, settings, resolvedFindings],
   )
 }
 
@@ -58,7 +61,8 @@ function normalize(d) {
   const s = d.stats
   const n = (v) => Number(v) || 0
   const total = n(s.critical) + n(s.warnings) + n(s.tips)
-  const scores = d.stats.trend.map((t) => t.score)
+  const trendRows = d.stats.trend.filter((t) => t.score != null)
+  const scores = trendRows.map((t) => Number(t.score))
   return {
     stats: [
       { label: 'Pull requests reviewed', to: n(s.reviewed), note: `${d.pulls.length} pull requests seen so far` },
@@ -71,8 +75,8 @@ function normalize(d) {
       { sev: 'warning', n: n(s.warnings) },
       { sev: 'suggestion', n: n(s.tips) },
     ],
-    trend: scores.some((x) => x != null) ? fillGaps(scores) : [],
-    trendDates: d.stats.trend.map((t) => t.date),
+    trend: scores,
+    trendDates: trendRows.map((t) => t.date),
     prs: d.pulls.map((p) => ({ ...p, when: ago(p.when), c: n(p.c), w: n(p.w), s: n(p.s) })),
     findings: d.findings.map((f) => ({
       id: f.id,
@@ -86,6 +90,7 @@ function normalize(d) {
       msg: f.en,
       ta: f.ta,
       fix: f.fix,
+      resolved: Boolean(f.resolved),
     })),
     rules: d.rules.map((r) => ({ id: r.id, text: r.description ? `${r.name}. ${r.description}` : r.name, on: r.enabled })),
     repos: d.repos.map((r) => ({ name: r.fullName, on: r.enabled })),
@@ -154,6 +159,8 @@ function useLive() {
       deleteRule: (id) => act(() => api(`/api/rules/${id}`, { method: 'DELETE' })),
       saveSettings: (s) => act(() => api('/api/settings', { method: 'PUT', body: s })),
       toggleRepo: (name, on) => act(() => api('/api/repos/toggle', { method: 'POST', body: { fullName: name, enabled: on } })),
+      resolveFinding: (id, resolved) => act(() => api(`/api/findings/${id}`, { method: 'PUT', body: { resolved } })),
+      retryPull: (id) => act(() => api(`/api/pulls/${id}/retry`, { method: 'POST' })),
       loadPull: (id) => api(`/api/pulls/${id}`),
     }
   }, [state, act])

@@ -37,6 +37,11 @@ public class ReviewWorker {
             int attempts = ((Number) job.get("attempts")).intValue();
             try {
                 reviews.review(pullId);
+                // Keep the pull-request state consistent with a successfully completed job.
+                // ReviewService writes the score and findings; this guards against stale queued/running states.
+                jdbc.update(
+                        "UPDATE pulls SET status='reviewed', reviewed_at=COALESCE(reviewed_at, now()) WHERE id=? AND status IN ('queued','running')",
+                        pullId);
                 jdbc.update("UPDATE jobs SET status='done', error=NULL WHERE id=?", jobId);
             } catch (Exception e) {
                 String msg = String.valueOf(e.getMessage());

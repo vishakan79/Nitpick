@@ -26,6 +26,8 @@ export default function PullDetail() {
   const pr = ws.prs.find((p) => String(p.id) === id)
   const [lang, setLang] = useState(ws.settings.lang || 'en')
   const [detail, setDetail] = useState(null)
+  const [retrying, setRetrying] = useState(false)
+  const [retryError, setRetryError] = useState('')
 
   useEffect(() => {
     if (ws.demo || !pr || pr.status !== 'reviewed') return
@@ -36,6 +38,18 @@ export default function PullDetail() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, pr?.status])
+
+  async function retryReview() {
+    setRetrying(true)
+    setRetryError('')
+    try {
+      await ws.retryPull(id)
+    } catch (e) {
+      setRetryError(e.message || 'Could not queue this review. Please try again.')
+    } finally {
+      setRetrying(false)
+    }
+  }
 
   if (!pr) return <NotFound base={base} />
 
@@ -80,9 +94,17 @@ export default function PullDetail() {
           </p>
           <p className="mx-auto mt-2 max-w-[44ch] text-[15px] text-soft">
             {pr.status === 'failed'
-              ? 'Nitpick tried three times and could not complete the review. Push a new commit to try again.'
+              ? 'The automated review could not finish. Check the configured AI provider and retry the review without creating another pull request.'
               : 'Comments appear here and on GitHub as soon as the review finishes. Small changes usually take under a minute.'}
           </p>
+          {pr.status === 'failed' && (
+            <div className="mt-5">
+              {retryError && <p role="alert" className="mb-3 text-[13px] text-pen">{retryError}</p>}
+              <button type="button" onClick={retryReview} disabled={retrying} className="rounded-md border-2 border-ink bg-hl px-5 py-2.5 text-[14px] font-semibold disabled:opacity-50">
+                {retrying ? 'Queueing review…' : 'Retry review'}
+              </button>
+            </div>
+          )}
         </div>
       ) : ws.demo ? (
         <div className="grid items-start gap-6 xl:grid-cols-[1fr_300px]">

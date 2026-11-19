@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { GitPullRequest, LayoutDashboard, ListChecks, Settings as Cog, ShieldAlert } from 'lucide-react'
+import { Bot, GitPullRequest, LayoutDashboard, ListChecks, Settings as Cog, ShieldAlert } from 'lucide-react'
 import { Logo } from '../components/ui'
 import { useWorkspace } from '../workspace'
 import { clearToken } from '../api'
@@ -10,6 +10,7 @@ const nav = (b) => [
   [`${b}/findings`, 'Findings', ShieldAlert],
   [`${b}/rules`, 'Rules', ListChecks],
   [`${b}/settings`, 'Settings', Cog],
+  [`${b}/assistant`, 'AI Assistant', Bot],
 ]
 
 function NavItem({ to, label, Icon, end }) {

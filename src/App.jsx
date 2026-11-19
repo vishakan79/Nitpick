@@ -9,6 +9,7 @@ import PullDetail from './app/PullDetail'
 import Findings from './app/Findings'
 import Rules from './app/Rules'
 import Settings from './app/Settings'
+import Assistant from './app/Assistant'
 import AuthCallback from './pages/AuthCallback'
 import { WorkspaceProvider } from './workspace'
 import Illustration from './components/Illustration'
@@ -53,6 +54,7 @@ const appRoutes = (
     <Route path="findings" element={<Findings />} />
     <Route path="rules" element={<Rules />} />
     <Route path="settings" element={<Settings />} />
+    <Route path="assistant" element={<Assistant />} />
   </>
 )
 

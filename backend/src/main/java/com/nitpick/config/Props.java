@@ -19,7 +19,7 @@ public class Props {
             @Value("${GITHUB_CLIENT_ID:}") String githubClientId,
             @Value("${GITHUB_CLIENT_SECRET:}") String githubClientSecret,
             @Value("${GROQ_API_KEY:}") String groqApiKey,
-            @Value("${GROQ_MODEL:llama-3.3-70b-versatile}") String groqModel,
+            @Value("${GROQ_MODEL:openai/gpt-oss-120b}") String groqModel,
             @Value("${JWT_SECRET:}") String jwtSecret,
             @Value("${TOKEN_ENCRYPTION_KEY:}") String encryptionKey,
             @Value("${WEBHOOK_SECRET:}") String webhookSecret,

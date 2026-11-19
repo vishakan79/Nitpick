@@ -143,10 +143,11 @@ public class ReviewService {
         };
     }
 
-    static boolean allowed(String strictness, String sev) {
+    public static boolean allowed(String strictness, String sev) {
         if ("light".equals(strictness)) return sev.equals("critical");
-        if ("strict".equals(strictness)) return true;
-        return !sev.equals("suggestion");
+        // Balanced reviews include actionable testing/maintainability suggestions too.
+        // The prompt explicitly excludes cosmetic/style-only nitpicks at this level.
+        return true;
     }
 
     private static boolean skip(String name) {
@@ -158,7 +159,7 @@ public class ReviewService {
     private static String systemPrompt(String strict, List<String> rules) {
         String level = "light".equals(strict) ? "Report only critical bugs and security holes."
                 : "strict".equals(strict) ? "Report bugs, security, performance, tests and style issues."
-                : "Report bugs, security issues and performance problems. Skip style nitpicks.";
+                : "Report bugs, security issues, performance problems, and actionable testing or maintainability gaps. Skip cosmetic/style-only nitpicks.";
         StringBuilder sb = new StringBuilder();
         sb.append("You are Nitpick, a precise senior code reviewer. You receive part of a pull request diff. ")
                 .append("Each line starts with its line number in the new file: 'L12+ code' is an added line, 'L12  code' is unchanged context, '   - code' is removed. ")
