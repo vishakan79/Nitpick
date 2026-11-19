@@ -33,21 +33,16 @@ export function TrendChart({ data, dates, className = '' }) {
   const pad = { l: 42, r: 14, t: 14, b: 30 }
   const min = 60
   const max = 100
-  const x = (i) => pad.l + ((w - pad.l - pad.r) * i) / (data.length - 1)
+  const x = (i) => pad.l + ((w - pad.l - pad.r) * i) / Math.max(data.length - 1, 1)
   const y = (v) => pad.t + (h - pad.t - pad.b) * (1 - (v - min) / (max - min))
   const line = data.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ')
   const area = `${line} L${x(data.length - 1)} ${h - pad.b} L${x(0)} ${h - pad.b} Z`
   const last = data.length - 1
   const ticks = [60, 70, 80, 90, 100]
+  const labelIndexes = [...new Set([0, Math.round((data.length - 1) * 0.25), Math.round((data.length - 1) * 0.5), Math.round((data.length - 1) * 0.75), data.length - 1])]
   const labels = dates
-    ? [0, 7, 14, 21, data.length - 1].map((i) => [i, fmt(dates[i])])
-    : [
-        [0, 'Oct 19'],
-        [7, 'Oct 26'],
-        [14, 'Nov 2'],
-        [21, 'Nov 9'],
-        [29, 'Nov 18'],
-      ]
+    ? labelIndexes.map((i) => [i, fmt(dates[i])])
+    : labelIndexes.map((i) => [i, `Day ${i + 1}`])
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className={`w-full ${className}`} role="img" aria-label={`Quality score over the last ${data.length} days, now ${data[data.length - 1]}`}>
       {ticks.map((t) => (
