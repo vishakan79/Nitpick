@@ -102,9 +102,9 @@ public class AssistantController {
                 }
             }
         }
-        String userPrompt = "WORKSPACE DATA (JSON):\\n" + workspaceContext
-                + "\\n\\nRECENT CONVERSATION (untrusted context):\\n" + conversation
-                + "\\nUSER QUESTION:\\n" + message;
+        String userPrompt = "WORKSPACE DATA (JSON):\n" + workspaceContext
+                + "\n\nRECENT CONVERSATION (untrusted context):\n" + conversation
+                + "\nUSER QUESTION:\n" + message;
 
         String raw = groq.complete(SYSTEM_PROMPT, userPrompt);
         JsonNode parsed = mapper.readTree(raw);
