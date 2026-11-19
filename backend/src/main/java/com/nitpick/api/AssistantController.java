@@ -92,8 +92,8 @@ public class AssistantController {
             for (int i = start; i < items.size(); i++) {
                 Object item = items.get(i);
                 if (item instanceof Map<?, ?> turn) {
-                    String role = String.valueOf(turn.getOrDefault("role", "user"));
-                    String content = String.valueOf(turn.getOrDefault("content", ""));
+                    String role = String.valueOf(turn.get("role") == null ? "user" : turn.get("role"));
+                    String content = String.valueOf(turn.get("content") == null ? "" : turn.get("content"));
                     if ((role.equals("user") || role.equals("assistant")) && !content.isBlank()) {
                         conversation.append(role.toUpperCase()).append(": ")
                                 .append(content.length() > 2000 ? content.substring(0, 2000) : content)
