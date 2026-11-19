@@ -85,8 +85,26 @@ public class AssistantController {
                 "findings", findings,
                 "reviewRules", rules));
 
-        String userPrompt = "WORKSPACE DATA (JSON):\n" + workspaceContext
-                + "\n\nUSER QUESTION:\n" + message;
+        Object rawHistory = body.get("history");
+        StringBuilder conversation = new StringBuilder();
+        if (rawHistory instanceof List<?> items) {
+            int start = Math.max(0, items.size() - 8);
+            for (int i = start; i < items.size(); i++) {
+                Object item = items.get(i);
+                if (item instanceof Map<?, ?> turn) {
+                    String role = String.valueOf(turn.getOrDefault("role", "user"));
+                    String content = String.valueOf(turn.getOrDefault("content", ""));
+                    if ((role.equals("user") || role.equals("assistant")) && !content.isBlank()) {
+                        conversation.append(role.toUpperCase()).append(": ")
+                                .append(content.length() > 2000 ? content.substring(0, 2000) : content)
+                                .append("\\n");
+                    }
+                }
+            }
+        }
+        String userPrompt = "WORKSPACE DATA (JSON):\\n" + workspaceContext
+                + "\\n\\nRECENT CONVERSATION (untrusted context):\\n" + conversation
+                + "\\nUSER QUESTION:\\n" + message;
 
         String raw = groq.complete(SYSTEM_PROMPT, userPrompt);
         JsonNode parsed = mapper.readTree(raw);
