@@ -80,18 +80,21 @@ class CoreTest {
         String diff = """
                 @@ -0,0 +1,5 @@
                 L10+ String sql = "SELECT * FROM users WHERE name = '" + name + "'";
-                L11+ for (int id : ids) {
+                L11  for (int id : ids) {
                 L12+ ResultSet rs = connection.createStatement().executeQuery("SELECT email FROM users WHERE id = " + id);
-                L13+ }
+                L13  }
                 """;
         var findings = StaticRuleScanner.scan(diff);
-        assertEquals(2, findings.size());
+        assertEquals(3, findings.size());
         assertEquals(10, findings.get(0).line());
         assertEquals("critical", findings.get(0).severity());
         assertEquals("SQL injection", findings.get(0).category());
         assertEquals(12, findings.get(1).line());
-        assertEquals("warning", findings.get(1).severity());
-        assertEquals("N+1 query", findings.get(1).category());
+        assertEquals("critical", findings.get(1).severity());
+        assertEquals("SQL injection", findings.get(1).category());
+        assertEquals(12, findings.get(2).line());
+        assertEquals("warning", findings.get(2).severity());
+        assertEquals("N+1 query", findings.get(2).category());
     }
 
     @Test
