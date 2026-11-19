@@ -80,14 +80,13 @@ public class ApiController {
         }, uid);
         List<Map<String, Object>> trend = new ArrayList<>();
         LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
-        Integer last = null;
         for (int i = 29; i >= 0; i--) {
             LocalDate d = today.minusDays(i);
-            Integer v = byDay.get(d);
-            if (v != null) last = v;
+            // Keep null days empty. Carrying the previous score forward creates
+            // a misleading flat line when no pull request was reviewed that day.
             Map<String, Object> pt = new HashMap<>();
             pt.put("date", d.toString());
-            pt.put("score", last);
+            pt.put("score", byDay.get(d));
             trend.add(pt);
         }
         t.put("trend", trend);
