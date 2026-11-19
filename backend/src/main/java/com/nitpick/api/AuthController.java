@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class AuthController {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AuthController.class);
     private final Props props;
     private final GithubClient github;
     private final JwtService jwt;
@@ -50,6 +51,9 @@ public class AuthController {
 
     @GetMapping("/auth/github/callback")
     public ResponseEntity<Void> callback(@RequestParam(required = false) String code, @RequestParam(required = false) String state) {
+        if (props.githubClientSecret == null || props.githubClientSecret.isBlank()) {
+            log.error("GITHUB_CLIENT_SECRET is not set on the server");
+        }
         if (code == null || state == null || jwt.verify(state, "state") == null) {
             return redirect(props.frontendUrl + "/login?error=invalid_state");
         }
@@ -82,6 +86,7 @@ public class AuthController {
             String session = jwt.issue(String.valueOf(id), "session", Duration.ofDays(7));
             return redirect(props.frontendUrl + "/auth/callback#token=" + session);
         } catch (Exception e) {
+            log.error("GitHub sign-in failed: {}", e.toString());
             return redirect(props.frontendUrl + "/login?error=github_failed");
         }
     }
