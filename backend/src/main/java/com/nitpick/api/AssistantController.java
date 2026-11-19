@@ -97,7 +97,7 @@ public class AssistantController {
                     if ((role.equals("user") || role.equals("assistant")) && !content.isBlank()) {
                         conversation.append(role.toUpperCase()).append(": ")
                                 .append(content.length() > 2000 ? content.substring(0, 2000) : content)
-                                .append("\\n");
+                                .append("\n");
                     }
                 }
             }
