@@ -98,6 +98,34 @@ public class ApiController {
         return jdbc.queryForList("SELECT " + PULL_COLS + " FROM pulls p JOIN repos r ON r.id=p.repo_id WHERE r.user_id=? ORDER BY p.created_at DESC LIMIT 100", uid);
     }
 
+    @PostMapping("/pulls/{id}/retry")
+    public ResponseEntity<Map<String, Object>> retryPull(
+            @AuthenticationPrincipal Long uid,
+            @PathVariable long id) {
+        List<Long> owned = jdbc.queryForList("""
+                SELECT p.id
+                FROM pulls p JOIN repos r ON r.id=p.repo_id
+                WHERE p.id=? AND r.user_id=?
+                """, Long.class, id, uid);
+        if (owned.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Integer active = jdbc.queryForObject(
+                "SELECT count(*) FROM jobs WHERE pull_id=? AND status IN ('queued','running')",
+                Integer.class, id);
+        if (active != null && active > 0) {
+            return ResponseEntity.accepted().body(Map.of("status", "queued"));
+        }
+        jdbc.update("""
+                UPDATE pulls
+                SET status='queued', score=NULL, critical=0, warnings=0, tips=0,
+                    summary=NULL, reviewed_at=NULL
+                WHERE id=?
+                """, id);
+        jdbc.update("INSERT INTO jobs(pull_id) VALUES (?)", id);
+        return ResponseEntity.accepted().body(Map.of("status", "queued"));
+    }
+
     @GetMapping("/pulls/{id}")
     public ResponseEntity<Map<String, Object>> pull(@AuthenticationPrincipal Long uid, @PathVariable long id) {
         List<Map<String, Object>> rows = jdbc.queryForList(
