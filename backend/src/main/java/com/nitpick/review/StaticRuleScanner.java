@@ -17,7 +17,7 @@ public final class StaticRuleScanner {
     private static final Pattern SQL_KEYWORD = Pattern.compile(
             "(?i)\\b(SELECT|INSERT\\s+INTO|UPDATE\\s+\\w+|DELETE\\s+FROM)\\b");
     private static final Pattern CONCATENATED_VALUE = Pattern.compile(
-            "\\"\\s*\\+\\s*[A-Za-z_$][A-Za-z0-9_$]*");
+            "\\+\\s*[A-Za-z_$][A-Za-z0-9_$]*");
     private static final Pattern LOOP = Pattern.compile("\\b(for|while)\\s*\\(");
     private static final Pattern DATABASE_CALL = Pattern.compile(
             "(?i)(\\.executeQuery\\s*\\(|\\.executeUpdate\\s*\\(|\\.queryFor(List|Object|Map)\\s*\\(|\\bjdbc\\.query\\s*\\(|\\.(findBy|getBy|findAll|loadBy)\\w*\\s*\\()");
@@ -38,7 +38,8 @@ public final class StaticRuleScanner {
             String code = lineMatcher.group(2);
 
             // Only flag a query when the SQL text itself is visibly concatenated with a variable.
-            if (SQL_KEYWORD.matcher(code).find() && CONCATENATED_VALUE.matcher(code).find()) {
+            if (code.indexOf(34) >= 0 && SQL_KEYWORD.matcher(code).find()
+                    && CONCATENATED_VALUE.matcher(code).find()) {
                 findings.add(new Finding(
                         lineNumber,
                         "critical",
