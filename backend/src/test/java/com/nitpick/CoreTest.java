@@ -9,6 +9,7 @@ import com.nitpick.ai.DiffChunker;
 import com.nitpick.ai.ReviewParser;
 import com.nitpick.api.SignatureVerifier;
 import com.nitpick.review.ReviewService;
+import com.nitpick.review.StaticRuleScanner;
 import com.nitpick.security.CryptoService;
 import com.nitpick.security.JwtService;
 import java.nio.charset.StandardCharsets;
@@ -72,6 +73,38 @@ class CoreTest {
         assertFalse(ReviewService.allowed("light", "warning"));
         assertFalse(ReviewService.allowed("light", "suggestion"));
         assertTrue(ReviewService.allowed("strict", "suggestion"));
+    }
+
+    @Test
+    void deterministicScannerFlagsSqlInjectionAndNPlusOneQueries() {
+        String diff = """
+                @@ -0,0 +1,5 @@
+                L10+ String sql = "SELECT * FROM users WHERE name = '" + name + "'";
+                L11  for (int id : ids) {
+                L12+ ResultSet rs = connection.createStatement().executeQuery("SELECT email FROM users WHERE id = " + id);
+                L13  }
+                """;
+        var findings = StaticRuleScanner.scan(diff);
+        assertEquals(3, findings.size());
+        assertEquals(10, findings.get(0).line());
+        assertEquals("critical", findings.get(0).severity());
+        assertEquals("SQL injection", findings.get(0).category());
+        assertEquals(12, findings.get(1).line());
+        assertEquals("critical", findings.get(1).severity());
+        assertEquals("SQL injection", findings.get(1).category());
+        assertEquals(12, findings.get(2).line());
+        assertEquals("warning", findings.get(2).severity());
+        assertEquals("N+1 query", findings.get(2).category());
+    }
+
+    @Test
+    void deterministicScannerDoesNotFlagParameterizedSql() {
+        String diff = """
+                @@ -0,0 +1,2 @@
+                L1+ PreparedStatement statement = connection.prepareStatement("SELECT * FROM users WHERE id = ?");
+                L2+ statement.setInt(1, id);
+                """;
+        assertTrue(StaticRuleScanner.scan(diff).isEmpty());
     }
 
     @Test
