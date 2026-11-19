@@ -63,6 +63,17 @@ class CoreTest {
         assertEquals("gho_token", c.decrypt(enc));
     }
 
+
+    @Test
+    void reviewSeverityPolicyIncludesActionableBalancedSuggestions() {
+        assertTrue(ReviewService.allowed("balanced", "critical"));
+        assertTrue(ReviewService.allowed("balanced", "warning"));
+        assertTrue(ReviewService.allowed("balanced", "suggestion"));
+        assertFalse(ReviewService.allowed("light", "warning"));
+        assertFalse(ReviewService.allowed("light", "suggestion"));
+        assertTrue(ReviewService.allowed("strict", "suggestion"));
+    }
+
     @Test
     void scoreIsClamped() {
         assertEquals(100, ReviewService.score(0, 0, 0));
