@@ -7,6 +7,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -25,6 +28,9 @@ public class SecurityConfig {
     SecurityFilterChain chain(HttpSecurity http, JwtAuthFilter jwt) throws Exception {
         http.csrf(c -> c.disable())
                 .cors(Customizer.withDefaults())
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -33,6 +39,17 @@ public class SecurityConfig {
                 .exceptionHandling(e -> e.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .addFilterBefore(jwt, UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    /**
+     * Nitpick authenticates API requests with signed JWTs only. No in-memory
+     * username/password account should be created by Spring Boot.
+     */
+    @Bean
+    UserDetailsService jwtOnlyUserDetailsService() {
+        return username -> {
+            throw new UsernameNotFoundException("Nitpick uses JWT authentication only.");
+        };
     }
 
     @Bean
