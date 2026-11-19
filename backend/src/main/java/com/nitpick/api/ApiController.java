@@ -1,0 +1,198 @@
+package com.nitpick.api;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.nitpick.config.Props;
+import com.nitpick.github.GithubClient;
+import com.nitpick.security.CryptoService;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api")
+public class ApiController {
+    private final JdbcTemplate jdbc;
+    private final GithubClient github;
+    private final CryptoService crypto;
+    private final Props props;
+
+    public ApiController(JdbcTemplate jdbc, GithubClient github, CryptoService crypto, Props props) {
+        this.jdbc = jdbc;
+        this.github = github;
+        this.crypto = crypto;
+        this.props = props;
+    }
+
+    private static final String PULL_COLS = """
+            p.id, p.number, p.title, r.full_name AS "repo", p.author, p.created_at AS "when", p.status, p.score,
+            p.critical AS "c", p.warnings AS "w", p.tips AS "s\"""";
+
+    @GetMapping("/me")
+    public Map<String, Object> me(@AuthenticationPrincipal Long uid) {
+        return jdbc.queryForMap(
+                "SELECT id, login, name, avatar_url AS \"avatarUrl\", email FROM users WHERE id=?", uid);
+    }
+
+    @GetMapping("/stats")
+    public Map<String, Object> stats(@AuthenticationPrincipal Long uid) {
+        Map<String, Object> t = jdbc.queryForMap("""
+                SELECT count(*) FILTER (WHERE p.status='reviewed') AS reviewed,
+                       coalesce(sum(p.critical),0) AS critical, coalesce(sum(p.warnings),0) AS warnings,
+                       coalesce(sum(p.tips),0) AS tips,
+                       coalesce(round(avg(p.score) FILTER (WHERE p.status='reviewed')),0) AS avg_score,
+                       coalesce(round(extract(epoch FROM percentile_cont(0.5) WITHIN GROUP
+                         (ORDER BY (p.reviewed_at - p.created_at))) ),0) AS median_seconds
+                FROM pulls p JOIN repos r ON r.id=p.repo_id WHERE r.user_id=?""", uid);
+        Map<LocalDate, Integer> byDay = new HashMap<>();
+        jdbc.query("""
+                SELECT (p.reviewed_at AT TIME ZONE 'UTC')::date AS d, round(avg(p.score)) AS s
+                FROM pulls p JOIN repos r ON r.id=p.repo_id
+                WHERE r.user_id=? AND p.status='reviewed' AND p.reviewed_at > now() - interval '30 days'
+                GROUP BY 1""", rs -> {
+            byDay.put(rs.getDate("d").toLocalDate(), rs.getInt("s"));
+        }, uid);
+        List<Map<String, Object>> trend = new ArrayList<>();
+        LocalDate today = LocalDate.now(java.time.ZoneOffset.UTC);
+        Integer last = null;
+        for (int i = 29; i >= 0; i--) {
+            LocalDate d = today.minusDays(i);
+            Integer v = byDay.get(d);
+            if (v != null) last = v;
+            Map<String, Object> pt = new HashMap<>();
+            pt.put("date", d.toString());
+            pt.put("score", last);
+            trend.add(pt);
+        }
+        t.put("trend", trend);
+        return t;
+    }
+
+    @GetMapping("/pulls")
+    public List<Map<String, Object>> pulls(@AuthenticationPrincipal Long uid) {
+        return jdbc.queryForList("SELECT " + PULL_COLS + " FROM pulls p JOIN repos r ON r.id=p.repo_id WHERE r.user_id=? ORDER BY p.created_at DESC LIMIT 100", uid);
+    }
+
+    @GetMapping("/pulls/{id}")
+    public ResponseEntity<Map<String, Object>> pull(@AuthenticationPrincipal Long uid, @PathVariable long id) {
+        List<Map<String, Object>> rows = jdbc.queryForList(
+                "SELECT " + PULL_COLS + ", p.summary FROM pulls p JOIN repos r ON r.id=p.repo_id WHERE r.user_id=? AND p.id=?", uid, id);
+        if (rows.isEmpty()) return ResponseEntity.notFound().build();
+        Map<String, Object> pr = new HashMap<>(rows.get(0));
+        pr.put("findings", jdbc.queryForList("""
+                SELECT id, file, line, severity, category, message_en AS "en", message_ta AS "ta", fix
+                FROM findings WHERE pull_id=? ORDER BY file, line""", id));
+        return ResponseEntity.ok(pr);
+    }
+
+    @GetMapping("/findings")
+    public List<Map<String, Object>> findings(@AuthenticationPrincipal Long uid) {
+        return jdbc.queryForList("""
+                SELECT f.id, f.pull_id AS "pullId", p.number, r.full_name AS "repo", f.file, f.line, f.severity,
+                       f.category, f.message_en AS "en", f.message_ta AS "ta", f.fix, f.created_at AS "when"
+                FROM findings f JOIN pulls p ON p.id=f.pull_id JOIN repos r ON r.id=p.repo_id
+                WHERE r.user_id=? ORDER BY f.created_at DESC, f.id LIMIT 200""", uid);
+    }
+
+    @GetMapping("/rules")
+    public List<Map<String, Object>> rules(@AuthenticationPrincipal Long uid) {
+        return jdbc.queryForList("SELECT id, name, description, enabled FROM rules WHERE user_id=? ORDER BY id", uid);
+    }
+
+    @PostMapping("/rules")
+    public Map<String, Object> addRule(@AuthenticationPrincipal Long uid, @RequestBody Map<String, Object> b) {
+        String name = String.valueOf(b.getOrDefault("name", "")).trim();
+        if (name.isEmpty() || name.length() > 120) throw new IllegalArgumentException("name required");
+        String desc = String.valueOf(b.getOrDefault("description", "")).trim();
+        if (desc.length() > 400) desc = desc.substring(0, 400);
+        return jdbc.queryForMap(
+                "INSERT INTO rules(user_id,name,description) VALUES (?,?,?) RETURNING id, name, description, enabled", uid, name, desc);
+    }
+
+    @PutMapping("/rules/{id}")
+    public ResponseEntity<Void> setRule(@AuthenticationPrincipal Long uid, @PathVariable long id, @RequestBody Map<String, Object> b) {
+        boolean enabled = Boolean.TRUE.equals(b.get("enabled"));
+        int n = jdbc.update("UPDATE rules SET enabled=? WHERE id=? AND user_id=?", enabled, id, uid);
+        return n == 0 ? ResponseEntity.notFound().build() : ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/settings")
+    public Map<String, Object> settings(@AuthenticationPrincipal Long uid) {
+        return jdbc.queryForMap("SELECT lang, strictness, fail_check AS \"failCheck\" FROM users WHERE id=?", uid);
+    }
+
+    @PutMapping("/settings")
+    public Map<String, Object> saveSettings(@AuthenticationPrincipal Long uid, @RequestBody Map<String, Object> b) {
+        String lang = "ta".equals(b.get("lang")) ? "ta" : "en";
+        Object s = b.get("strictness");
+        String strict = "light".equals(s) || "strict".equals(s) ? (String) s : "balanced";
+        jdbc.update("UPDATE users SET lang=?, strictness=?, fail_check=? WHERE id=?",
+                lang, strict, Boolean.TRUE.equals(b.get("failCheck")), uid);
+        return settings(uid);
+    }
+
+    @GetMapping("/repos")
+    public List<Map<String, Object>> repos(@AuthenticationPrincipal Long uid) {
+        String token = token(uid);
+        Set<String> on = new HashSet<>(jdbc.queryForList("SELECT full_name FROM repos WHERE user_id=? AND enabled=TRUE", String.class, uid));
+        List<Map<String, Object>> out = new ArrayList<>();
+        JsonNode list = github.listRepos(token);
+        if (list != null && list.isArray()) {
+            for (JsonNode r : list) {
+                Map<String, Object> m = new HashMap<>();
+                String name = r.path("full_name").asText();
+                m.put("fullName", name);
+                m.put("private", r.path("private").asBoolean(false));
+                m.put("enabled", on.contains(name));
+                out.add(m);
+            }
+        }
+        return out;
+    }
+
+    @PostMapping("/repos/toggle")
+    public ResponseEntity<Map<String, Object>> toggle(@AuthenticationPrincipal Long uid, @RequestBody Map<String, Object> b) {
+        String full = String.valueOf(b.getOrDefault("fullName", ""));
+        if (!full.matches("[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+")) return ResponseEntity.badRequest().build();
+        boolean enable = Boolean.TRUE.equals(b.get("enabled"));
+        String token = token(uid);
+        List<Map<String, Object>> existing = jdbc.queryForList("SELECT id, webhook_id FROM repos WHERE user_id=? AND full_name=?", uid, full);
+        try {
+            if (enable) {
+                Long hook = existing.isEmpty() ? null : (Long) existing.get(0).get("webhook_id");
+                if (hook == null) {
+                    hook = github.createHook(token, full, props.publicUrl + "/webhooks/github", props.webhookSecret);
+                }
+                jdbc.update("""
+                        INSERT INTO repos(user_id, full_name, webhook_id, enabled) VALUES (?,?,?,TRUE)
+                        ON CONFLICT (user_id, full_name) DO UPDATE SET webhook_id=EXCLUDED.webhook_id, enabled=TRUE""", uid, full, hook);
+            } else if (!existing.isEmpty()) {
+                Object hook = existing.get(0).get("webhook_id");
+                if (hook != null) {
+                    try { github.deleteHook(token, full, ((Number) hook).longValue()); } catch (RuntimeException ignored) { }
+                }
+                jdbc.update("UPDATE repos SET enabled=FALSE, webhook_id=NULL WHERE user_id=? AND full_name=?", uid, full);
+            }
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(502).body(Map.of("error", "GitHub refused: " + e.getMessage()));
+        }
+        return ResponseEntity.ok(Map.of("fullName", full, "enabled", enable));
+    }
+
+    private String token(Long uid) {
+        return crypto.decrypt(jdbc.queryForObject("SELECT token_enc FROM users WHERE id=?", String.class, uid));
+    }
+}
