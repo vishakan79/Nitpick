@@ -9,6 +9,7 @@ const FILTERS = [
   ['reviewed', 'Reviewed'],
   ['running', 'Reviewing'],
   ['queued', 'In queue'],
+  ['failed', 'Failed'],
 ]
 
 export default function Pulls() {
