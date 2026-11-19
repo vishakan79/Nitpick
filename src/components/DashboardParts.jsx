@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { CountUp, SeverityBars, TrendChart } from './Charts'
-import { prs, trend } from '../data'
+import { useWorkspace } from '../workspace'
 
 export function Panel({ title, aside, children, className = '' }) {
   return (
@@ -16,14 +16,8 @@ export function Panel({ title, aside, children, className = '' }) {
   )
 }
 
-const STATS = [
-  { label: 'Pull requests reviewed', to: 128, note: '18 more than last month' },
-  { label: 'Issues caught', to: 342, note: '47 critical, 118 warnings' },
-  { label: 'Median review time', to: 38, suffix: 's', note: 'from open to first comment' },
-  { label: 'Average score', to: 81, note: 'up from 74 in October' },
-]
-
 export function StatRow() {
+  const { stats: STATS } = useWorkspace()
   return (
     <dl className="grid grid-cols-2 overflow-hidden rounded-lg border border-line bg-sheet lg:grid-cols-4">
       {STATS.map((s, i) => (
@@ -40,26 +34,29 @@ export function StatRow() {
 }
 
 export function TrendPanel() {
+  const { trend, trendDates } = useWorkspace()
   return (
     <Panel title="Quality score" aside="Last 30 days">
-      <TrendChart data={trend} />
+      {trend.length ? (
+        <TrendChart data={trend} dates={trendDates} />
+      ) : (
+        <p className="py-10 text-center text-[14.5px] text-soft">The score appears here after Nitpick reviews its first pull request.</p>
+      )}
     </Panel>
   )
 }
 
 export function SeverityPanel() {
+  const { counts, demo } = useWorkspace()
+  const total = counts.reduce((a, c) => a + c.n, 0)
   return (
-    <Panel title="Findings by severity" aside="342 total">
-      <SeverityBars
-        counts={[
-          { sev: 'critical', n: 47 },
-          { sev: 'warning', n: 118 },
-          { sev: 'suggestion', n: 177 },
-        ]}
-      />
-      <p className="mt-5 border-t border-line pt-4 text-[13.5px] leading-relaxed text-soft">
-        Security issues are the most common critical finding. Most warnings are database queries inside loops.
-      </p>
+    <Panel title="Findings by severity" aside={`${total} total`}>
+      <SeverityBars counts={counts} />
+      {demo && (
+        <p className="mt-5 border-t border-line pt-4 text-[13.5px] leading-relaxed text-soft">
+          Security issues are the most common critical finding. Most warnings are database queries inside loops.
+        </p>
+      )}
     </Panel>
   )
 }
@@ -69,8 +66,9 @@ export function StatusPill({ status }) {
     reviewed: 'bg-leaf/10 text-leaf',
     running: 'bg-azure/10 text-azure',
     queued: 'bg-ink/[0.07] text-soft',
+    failed: 'bg-pen/10 text-pen',
   }
-  const label = { reviewed: 'Reviewed', running: 'Reviewing', queued: 'In queue' }
+  const label = { reviewed: 'Reviewed', running: 'Reviewing', queued: 'In queue', failed: 'Failed' }
   return <span className={`inline-block rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${map[status]}`}>{label[status]}</span>
 }
 
@@ -80,7 +78,12 @@ export function ScoreBadge({ score }) {
   return <span className={`inline-grid h-7 min-w-[40px] place-items-center rounded-md px-2 font-mono text-[13px] font-semibold ${cls}`}>{score}</span>
 }
 
-export function ReviewsTable({ rows = prs, linked = true }) {
+export function ReviewsTable({ rows, linked = true }) {
+  const ws = useWorkspace()
+  rows = rows || ws.prs.slice(0, 6)
+  if (rows.length === 0) {
+    return <p className="py-6 text-[14.5px] text-soft">No pull requests yet. Turn on a repository in Settings, then open a pull request.</p>
+  }
   return (
     <div className="overflow-x-auto scroll-thin">
       <table className="w-full min-w-[520px] text-left text-[14px]">
@@ -96,12 +99,12 @@ export function ReviewsTable({ rows = prs, linked = true }) {
             <tr key={p.id} className="border-t border-line">
               <td className="py-3 pr-4">
                 {linked ? (
-                  <Link to={`/app/pulls/${p.id}`} className="font-semibold hover:underline">
-                    #{p.id} {p.title}
+                  <Link to={`${ws.base}/pulls/${p.id}`} className="font-semibold hover:underline">
+                    #{p.number ?? p.id} {p.title}
                   </Link>
                 ) : (
                   <span className="font-semibold">
-                    #{p.id} {p.title}
+                    #{p.number ?? p.id} {p.title}
                   </span>
                 )}
                 <div className="text-[12.5px] text-soft">

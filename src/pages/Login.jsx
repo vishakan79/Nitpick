@@ -1,9 +1,11 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
+import { API } from '../api'
 import { Button, GithubIcon, Logo } from '../components/ui'
 import Illustration from '../components/Illustration'
 
 export default function Login() {
-  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const failed = params.get('error')
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="flex flex-col justify-between px-6 py-8 sm:px-14">
@@ -15,12 +17,20 @@ export default function Login() {
           <p className="mt-3 text-[16px] leading-relaxed text-soft">
             Use your GitHub account. Nitpick asks to read pull requests and post review comments, and nothing more.
           </p>
-          <Button type="button" onClick={() => navigate('/app')} className="mt-8 w-full">
+          <Button type="button" onClick={() => { window.location.href = `${API}/auth/github` }} className="mt-8 w-full">
             <GithubIcon className="h-5 w-5" />
             Continue with GitHub
           </Button>
-          <p className="mt-4 rounded-md border border-line bg-sheet p-3 text-[13.5px] leading-relaxed text-soft">
-            This is a preview. Signing in opens a demo workspace with sample data, and no account is created.
+          {failed && (
+            <p role="alert" className="mt-4 rounded-md border border-pen bg-pen/10 p-3 text-[13.5px] leading-relaxed">
+              GitHub sign-in did not finish. Try again, and approve the access request on GitHub.
+            </p>
+          )}
+          <p className="mt-4 text-[14px] text-soft">
+            Just looking?{' '}
+            <Link to="/demo" className="font-semibold text-ink underline underline-offset-2">
+              Open the demo workspace
+            </Link>
           </p>
         </div>
         <p className="text-[13px] text-soft">

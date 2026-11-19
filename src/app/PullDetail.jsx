@@ -1,34 +1,50 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
-import { DiffBlock } from '../components/Diff'
+import { CommentBlock, DiffBlock } from '../components/Diff'
 import { LangToggle, SeverityTag } from '../components/ui'
 import { ScoreRing } from '../components/Charts'
 import { StatusPill } from '../components/DashboardParts'
-import { comments, detailDiff, prs } from '../data'
+import { comments, detailDiff } from '../data'
+import { useWorkspace } from '../workspace'
+
+function NotFound({ base }) {
+  return (
+    <div className="py-20 text-center">
+      <h1 className="text-[32px] font-extrabold">Pull request not found</h1>
+      <Link to={`${base}/pulls`} className="mt-3 inline-block font-semibold underline underline-offset-2">
+        Back to pull requests
+      </Link>
+    </div>
+  )
+}
 
 export default function PullDetail() {
   const { id } = useParams()
-  const pr = prs.find((p) => String(p.id) === id)
-  const [lang, setLang] = useState('en')
+  const ws = useWorkspace()
+  const base = ws.base
+  const pr = ws.prs.find((p) => String(p.id) === id)
+  const [lang, setLang] = useState(ws.settings.lang || 'en')
+  const [detail, setDetail] = useState(null)
 
-  if (!pr) {
-    return (
-      <div className="py-20 text-center">
-        <h1 className="text-[32px] font-extrabold">Pull request not found</h1>
-        <Link to="/app/pulls" className="mt-3 inline-block font-semibold underline underline-offset-2">
-          Back to pull requests
-        </Link>
-      </div>
-    )
-  }
+  useEffect(() => {
+    if (ws.demo || !pr || pr.status !== 'reviewed') return
+    let alive = true
+    ws.loadPull(id).then((d) => alive && setDetail(d)).catch(() => {})
+    return () => {
+      alive = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, pr?.status])
 
-  const flagged = detailDiff.lines.filter((l) => l.c)
+  if (!pr) return <NotFound base={base} />
+
   const reviewed = pr.status === 'reviewed'
+  const flagged = detailDiff.lines.filter((l) => l.c)
 
   return (
     <div>
-      <Link to="/app/pulls" className="mb-5 inline-flex items-center gap-1.5 text-[14px] font-semibold text-soft hover:text-ink">
+      <Link to={`${base}/pulls`} className="mb-5 inline-flex items-center gap-1.5 text-[14px] font-semibold text-soft hover:text-ink">
         <ArrowLeft size={16} />
         Pull requests
       </Link>
@@ -36,7 +52,7 @@ export default function PullDetail() {
       <div className="mb-6 flex flex-wrap items-start justify-between gap-6">
         <div>
           <h1 className="text-[32px] font-extrabold leading-tight sm:text-[38px]">
-            #{pr.id} {pr.title}
+            #{pr.number ?? pr.id} {pr.title}
           </h1>
           <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14.5px] text-soft">
             <span>{pr.repo}</span>
@@ -59,10 +75,16 @@ export default function PullDetail() {
 
       {!reviewed ? (
         <div className="rounded-lg border border-line bg-sheet p-8 text-center">
-          <p className="font-display text-[22px] font-bold">{pr.status === 'running' ? 'Nitpick is reading this pull request' : 'This pull request is waiting in the queue'}</p>
-          <p className="mx-auto mt-2 max-w-[44ch] text-[15px] text-soft">Comments appear here and on GitHub as soon as the review finishes. Small changes usually take under a minute.</p>
+          <p className="font-display text-[22px] font-bold">
+            {pr.status === 'running' ? 'Nitpick is reading this pull request' : pr.status === 'failed' ? 'The review did not finish' : 'This pull request is waiting in the queue'}
+          </p>
+          <p className="mx-auto mt-2 max-w-[44ch] text-[15px] text-soft">
+            {pr.status === 'failed'
+              ? 'Nitpick tried three times and could not complete the review. Push a new commit to try again.'
+              : 'Comments appear here and on GitHub as soon as the review finishes. Small changes usually take under a minute.'}
+          </p>
         </div>
-      ) : (
+      ) : ws.demo ? (
         <div className="grid items-start gap-6 xl:grid-cols-[1fr_300px]">
           <div className="min-w-0">
             <div className="mb-3 flex items-center justify-between">
@@ -88,6 +110,32 @@ export default function PullDetail() {
               })}
             </ul>
           </aside>
+        </div>
+      ) : (
+        <div className="max-w-[860px]">
+          {detail?.summary && <p className="mb-5 text-[15px] text-soft">{detail.summary}</p>}
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="font-display text-[20px] font-bold">Comments posted on GitHub</h2>
+            <LangToggle lang={lang} onChange={setLang} />
+          </div>
+          {!detail ? (
+            <p className="text-soft">Loading comments</p>
+          ) : detail.findings.length === 0 ? (
+            <p className="rounded-lg border border-line bg-sheet p-8 text-center text-[15px] text-soft">Nitpick found nothing to flag in this pull request.</p>
+          ) : (
+            <ul className="space-y-6">
+              {detail.findings.map((f) => (
+                <li key={f.id}>
+                  <p className="font-mono text-[12.5px] text-soft">
+                    {f.file}:{f.line}
+                  </p>
+                  <div className="-ml-12">
+                    <CommentBlock c={{ sev: f.severity, cat: f.category, en: f.en, ta: f.ta, fix: f.fix }} lang={lang} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </div>

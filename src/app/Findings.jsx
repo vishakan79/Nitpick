@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Check } from 'lucide-react'
 import { PageHead } from './Dashboard'
 import { SeverityTag } from '../components/ui'
-import { findings as seed } from '../data'
+import { useWorkspace } from '../workspace'
 
 const FILTERS = [
   ['all', 'All'],
@@ -13,6 +13,8 @@ const FILTERS = [
 ]
 
 export default function Findings() {
+  const ws = useWorkspace()
+  const seed = ws.findings
   const [f, setF] = useState('all')
   const [resolved, setResolved] = useState({})
   const rows = seed.filter((x) => f === 'all' || x.sev === f)
@@ -43,11 +45,11 @@ export default function Findings() {
                     <SeverityTag sev={x.sev} />
                     <span className="text-[13px] text-soft">{x.cat}</span>
                   </div>
-                  <p className={`max-w-[70ch] text-[15px] leading-snug ${done ? 'line-through' : ''}`}>{x.msg}</p>
+                  <p className={`max-w-[70ch] text-[15px] leading-snug ${done ? 'line-through' : ''}`}>{ws.settings.lang === 'ta' && x.ta ? x.ta : x.msg}</p>
                   <p className="mt-1.5 font-mono text-[12.5px] text-soft">
                     {x.file}:{x.line} ·{' '}
-                    <Link to={`/app/pulls/${x.pr}`} className="underline underline-offset-2 hover:text-ink">
-                      {x.repo} #{x.pr}
+                    <Link to={`${ws.base}/pulls/${x.pr}`} className="underline underline-offset-2 hover:text-ink">
+                      {x.repo} #{x.number ?? x.pr}
                     </Link>
                   </p>
                 </div>

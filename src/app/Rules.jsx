@@ -2,18 +2,31 @@ import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { PageHead } from './Dashboard'
 import { Button, Switch } from '../components/ui'
-import { initialRules } from '../data'
+import { useWorkspace } from '../workspace'
 
 export default function Rules() {
-  const [rules, setRules] = useState(initialRules)
+  const ws = useWorkspace()
+  const rules = ws.rules
   const [text, setText] = useState('')
+  const [error, setError] = useState('')
+
+  const run = async (fn) => {
+    setError('')
+    try {
+      await fn()
+    } catch (e) {
+      setError(e.message)
+    }
+  }
 
   const add = (e) => {
     e.preventDefault()
     const t = text.trim()
     if (!t) return
-    setRules((r) => [{ id: Date.now(), text: t, on: true }, ...r])
-    setText('')
+    run(async () => {
+      await ws.addRule(t)
+      setText('')
+    })
   }
 
   return (
@@ -34,6 +47,11 @@ export default function Rules() {
         <Button type="submit">Add rule</Button>
       </form>
 
+      {error && (
+        <p role="alert" className="mb-4 rounded-md border border-pen bg-pen/10 p-3 text-[14px]">
+          {error}
+        </p>
+      )}
       {rules.length === 0 ? (
         <p className="rounded-lg border border-line bg-sheet p-8 text-center text-soft">No rules yet. Add one above and Nitpick will start checking it on the next pull request.</p>
       ) : (
@@ -42,8 +60,8 @@ export default function Rules() {
             <li key={r.id} className="flex items-center justify-between gap-4 px-5 py-4">
               <span className={`text-[15.5px] leading-snug ${r.on ? '' : 'text-soft'}`}>{r.text}</span>
               <span className="flex items-center gap-4">
-                <Switch on={r.on} onChange={(v) => setRules((rs) => rs.map((x) => (x.id === r.id ? { ...x, on: v } : x)))} label={`Rule: ${r.text}`} />
-                <button type="button" aria-label={`Delete rule: ${r.text}`} onClick={() => setRules((rs) => rs.filter((x) => x.id !== r.id))} className="text-soft transition-colors hover:text-pen">
+                <Switch on={r.on} onChange={(v) => run(() => ws.toggleRule(r.id, v))} label={`Rule: ${r.text}`} />
+                <button type="button" aria-label={`Delete rule: ${r.text}`} onClick={() => run(() => ws.deleteRule(r.id))} className="text-soft transition-colors hover:text-pen">
                   <Trash2 size={18} />
                 </button>
               </span>

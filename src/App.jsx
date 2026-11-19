@@ -9,6 +9,8 @@ import PullDetail from './app/PullDetail'
 import Findings from './app/Findings'
 import Rules from './app/Rules'
 import Settings from './app/Settings'
+import AuthCallback from './pages/AuthCallback'
+import { WorkspaceProvider } from './workspace'
 import Illustration from './components/Illustration'
 import { Button } from './components/ui'
 
@@ -35,6 +37,25 @@ function NotFound() {
   )
 }
 
+function Shell({ demo }) {
+  return (
+    <WorkspaceProvider demo={demo}>
+      <AppLayout />
+    </WorkspaceProvider>
+  )
+}
+
+const appRoutes = (
+  <>
+    <Route index element={<Dashboard />} />
+    <Route path="pulls" element={<Pulls />} />
+    <Route path="pulls/:id" element={<PullDetail />} />
+    <Route path="findings" element={<Findings />} />
+    <Route path="rules" element={<Rules />} />
+    <Route path="settings" element={<Settings />} />
+  </>
+)
+
 export default function App() {
   return (
     <>
@@ -42,13 +63,12 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/app" element={<AppLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="pulls" element={<Pulls />} />
-          <Route path="pulls/:id" element={<PullDetail />} />
-          <Route path="findings" element={<Findings />} />
-          <Route path="rules" element={<Rules />} />
-          <Route path="settings" element={<Settings />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/app" element={<Shell demo={false} />}>
+          {appRoutes}
+        </Route>
+        <Route path="/demo" element={<Shell demo />}>
+          {appRoutes}
         </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PageHead } from './Dashboard'
 import { ScoreBadge, StatusPill } from '../components/DashboardParts'
-import { prs } from '../data'
+import { useWorkspace } from '../workspace'
 
 const FILTERS = [
   ['all', 'All'],
@@ -12,8 +12,9 @@ const FILTERS = [
 ]
 
 export default function Pulls() {
+  const ws = useWorkspace()
   const [f, setF] = useState('all')
-  const rows = prs.filter((p) => f === 'all' || p.status === f)
+  const rows = ws.prs.filter((p) => f === 'all' || p.status === f)
   return (
     <div>
       <PageHead title="Pull requests" sub={`${rows.length} shown`}>
@@ -39,8 +40,8 @@ export default function Pulls() {
             {rows.map((p) => (
               <tr key={p.id} className="border-b border-line last:border-0 hover:bg-paper/50">
                 <td className="px-5 py-3.5">
-                  <Link to={`/app/pulls/${p.id}`} className="font-semibold hover:underline">
-                    #{p.id} {p.title}
+                  <Link to={`${ws.base}/pulls/${p.id}`} className="font-semibold hover:underline">
+                    #{p.number ?? p.id} {p.title}
                   </Link>
                   <div className="text-[12.5px] text-soft">
                     {p.repo} · {p.author} · {p.when}
@@ -65,6 +66,13 @@ export default function Pulls() {
                 </td>
               </tr>
             ))}
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-5 py-10 text-center text-soft">
+                  No pull requests here yet.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

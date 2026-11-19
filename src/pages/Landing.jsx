@@ -89,7 +89,7 @@ function Hero() {
           <GithubIcon className="h-5 w-5" />
           Install on GitHub
         </Button>
-        <Button as="link" to="/app" variant="ghost">
+        <Button as="link" to="/demo" variant="ghost">
           Try the demo dashboard
           <ArrowRight size={17} />
         </Button>
@@ -372,7 +372,7 @@ function DashboardPreview() {
       <div className="mx-auto max-w-[1120px] px-5 py-16 sm:py-24">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <h2 className="max-w-[20ch] text-[36px] font-extrabold leading-[1.02] sm:text-[52px]">Everything Nitpick found, in one place.</h2>
-          <Button as="link" to="/app" variant="ghost">
+          <Button as="link" to="/demo" variant="ghost">
             Open the demo dashboard
             <ArrowRight size={17} />
           </Button>
@@ -539,7 +539,7 @@ function Footer() {
             </a>
           </li>
           <li>
-            <Link to="/app" className="hover:underline">
+            <Link to="/demo" className="hover:underline">
               Demo dashboard
             </Link>
           </li>

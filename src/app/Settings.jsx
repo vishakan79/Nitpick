@@ -3,18 +3,38 @@ import { Check } from 'lucide-react'
 import { PageHead } from './Dashboard'
 import { Button, LangToggle, Switch } from '../components/ui'
 import { Panel } from '../components/DashboardParts'
-import { repos as seed } from '../data'
+import { useWorkspace } from '../workspace'
 
 export default function Settings() {
-  const [lang, setLang] = useState('en')
-  const [strict, setStrict] = useState('balanced')
-  const [checks, setChecks] = useState(false)
-  const [repos, setRepos] = useState(seed)
+  const ws = useWorkspace()
+  const [lang, setLang] = useState(ws.settings.lang)
+  const [strict, setStrict] = useState(ws.settings.strictness)
+  const [checks, setChecks] = useState(ws.settings.failCheck)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
+  const [pending, setPending] = useState('')
 
-  const save = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2400)
+  const save = async () => {
+    setError('')
+    try {
+      await ws.saveSettings({ lang, strictness: strict, failCheck: checks })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2400)
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  const flip = async (name, on) => {
+    setError('')
+    setPending(name)
+    try {
+      await ws.toggleRepo(name, on)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setPending('')
+    }
   }
 
   return (
@@ -56,11 +76,15 @@ export default function Settings() {
         </Panel>
 
         <Panel title="Repositories">
+          {!ws.demo && (
+            <p className="mb-3 max-w-[60ch] text-[14px] leading-relaxed text-soft">Turning a repository on adds a webhook to it on GitHub. Turning it off removes the webhook.</p>
+          )}
+          {ws.repos.length === 0 && <p className="text-[14.5px] text-soft">No repositories found on your GitHub account.</p>}
           <ul className="divide-y divide-line">
-            {repos.map((r) => (
-              <li key={r.name} className="flex items-center justify-between py-3">
-                <span className="font-mono text-[14px]">arun/{r.name}</span>
-                <Switch on={r.on} onChange={(v) => setRepos((rs) => rs.map((x) => (x.name === r.name ? { ...x, on: v } : x)))} label={`Review ${r.name}`} />
+            {ws.repos.map((r) => (
+              <li key={r.name} className={`flex items-center justify-between py-3 ${pending === r.name ? 'opacity-50' : ''}`}>
+                <span className="truncate font-mono text-[14px]">{r.name}</span>
+                <Switch on={r.on} onChange={(v) => flip(r.name, v)} label={`Review ${r.name}`} />
               </li>
             ))}
           </ul>
@@ -70,6 +94,11 @@ export default function Settings() {
           <Button type="button" onClick={save}>
             Save changes
           </Button>
+          {error && (
+            <span role="alert" className="text-[14px] font-semibold text-pen">
+              {error}
+            </span>
+          )}
           <span role="status" aria-live="polite" className={`inline-flex items-center gap-1.5 text-[14px] font-semibold text-leaf transition-opacity ${saved ? 'opacity-100' : 'opacity-0'}`}>
             <Check size={16} strokeWidth={3} />
             Saved

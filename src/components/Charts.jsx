@@ -20,7 +20,13 @@ export function CountUp({ to, suffix = '', duration = 1.1 }) {
   )
 }
 
-export function TrendChart({ data, className = '' }) {
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const fmt = (iso) => {
+  const [, m, d] = iso.split('-')
+  return `${MONTHS[Number(m) - 1]} ${Number(d)}`
+}
+
+export function TrendChart({ data, dates, className = '' }) {
   const reduce = useReducedMotion()
   const w = 700
   const h = 210
@@ -33,15 +39,17 @@ export function TrendChart({ data, className = '' }) {
   const area = `${line} L${x(data.length - 1)} ${h - pad.b} L${x(0)} ${h - pad.b} Z`
   const last = data.length - 1
   const ticks = [60, 70, 80, 90, 100]
-  const labels = [
-    [0, 'Oct 19'],
-    [7, 'Oct 26'],
-    [14, 'Nov 2'],
-    [21, 'Nov 9'],
-    [29, 'Nov 18'],
-  ]
+  const labels = dates
+    ? [0, 7, 14, 21, data.length - 1].map((i) => [i, fmt(dates[i])])
+    : [
+        [0, 'Oct 19'],
+        [7, 'Oct 26'],
+        [14, 'Nov 2'],
+        [21, 'Nov 9'],
+        [29, 'Nov 18'],
+      ]
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className={`w-full ${className}`} role="img" aria-label="Quality score rising from 71 to 90 over 30 days">
+    <svg viewBox={`0 0 ${w} ${h}`} className={`w-full ${className}`} role="img" aria-label={`Quality score over the last ${data.length} days, now ${data[data.length - 1]}`}>
       {ticks.map((t) => (
         <g key={t}>
           <line x1={pad.l} x2={w - pad.r} y1={y(t)} y2={y(t)} stroke="#D3D9E6" strokeWidth="1" />
@@ -74,7 +82,7 @@ export function TrendChart({ data, className = '' }) {
 }
 
 export function SeverityBars({ counts }) {
-  const total = counts.reduce((a, c) => a + c.n, 0)
+  const total = counts.reduce((a, c) => a + c.n, 0) || 1
   const reduce = useReducedMotion()
   return (
     <ul className="space-y-4">

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Panel, ReviewsTable, SeverityPanel, StatRow, TrendPanel } from '../components/DashboardParts'
 import { SeverityTag } from '../components/ui'
-import { findings } from '../data'
+import { useWorkspace } from '../workspace'
 
 export function PageHead({ title, sub, children }) {
   return (
@@ -16,20 +16,22 @@ export function PageHead({ title, sub, children }) {
 }
 
 export default function Dashboard() {
-  const open = findings.filter((f) => f.sev === 'critical').slice(0, 4)
+  const ws = useWorkspace()
+  const open = ws.findings.filter((f) => f.sev === 'critical').slice(0, 4)
   return (
     <div className="space-y-4">
-      <PageHead title="Dashboard" sub="Last 30 days across 3 repositories" />
+      <PageHead title="Dashboard" sub={`Last 30 days across ${ws.repos.filter((r) => r.on).length} ${ws.repos.filter((r) => r.on).length === 1 ? 'repository' : 'repositories'}`} />
       <StatRow />
       <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
         <TrendPanel />
         <SeverityPanel />
       </div>
       <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
-        <Panel title="Recent reviews" aside={<Link to="/app/pulls" className="font-semibold text-ink underline underline-offset-2">View all</Link>}>
+        <Panel title="Recent reviews" aside={<Link to={`${ws.base}/pulls`} className="font-semibold text-ink underline underline-offset-2">View all</Link>}>
           <ReviewsTable rows={undefined} />
         </Panel>
-        <Panel title="Critical findings" aside={<Link to="/app/findings" className="font-semibold text-ink underline underline-offset-2">View all</Link>}>
+        <Panel title="Critical findings" aside={<Link to={`${ws.base}/findings`} className="font-semibold text-ink underline underline-offset-2">View all</Link>}>
+          {open.length === 0 && <p className="text-[14.5px] text-soft">No critical findings. Nice.</p>}
           <ul className="space-y-4">
             {open.map((f) => (
               <li key={f.id} className="border-t border-line pt-3 first:border-0 first:pt-0">

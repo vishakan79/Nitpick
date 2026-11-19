@@ -129,6 +129,12 @@ public class ApiController {
         return n == 0 ? ResponseEntity.notFound().build() : ResponseEntity.noContent().build();
     }
 
+    @org.springframework.web.bind.annotation.DeleteMapping("/rules/{id}")
+    public ResponseEntity<Void> deleteRule(@AuthenticationPrincipal Long uid, @PathVariable long id) {
+        int n = jdbc.update("DELETE FROM rules WHERE id=? AND user_id=?", id, uid);
+        return n == 0 ? ResponseEntity.notFound().build() : ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/settings")
     public Map<String, Object> settings(@AuthenticationPrincipal Long uid) {
         return jdbc.queryForMap("SELECT lang, strictness, fail_check AS \"failCheck\" FROM users WHERE id=?", uid);
