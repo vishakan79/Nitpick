@@ -77,11 +77,13 @@ class CoreTest {
 
     @Test
     void deterministicScannerFlagsSqlInjectionAndNPlusOneQueries() {
-        String diff = "@@ -0,0 +1,5 @@\\n"
-                + "L10+ String sql = \\"SELECT * FROM users WHERE name = '\\" + name + "\\';\\n"
-                + "L11+ for (int id : ids) {\\n"
-                + "L12+ ResultSet rs = connection.createStatement().executeQuery(\\"SELECT email FROM users WHERE id = \\" + id);\\n"
-                + "L13+ }\\n";
+        String diff = """
+                @@ -0,0 +1,5 @@
+                L10+ String sql = "SELECT * FROM users WHERE name = '" + name + "'";
+                L11+ for (int id : ids) {
+                L12+ ResultSet rs = connection.createStatement().executeQuery("SELECT email FROM users WHERE id = " + id);
+                L13+ }
+                """;
         var findings = StaticRuleScanner.scan(diff);
         assertEquals(2, findings.size());
         assertEquals(10, findings.get(0).line());
@@ -94,9 +96,11 @@ class CoreTest {
 
     @Test
     void deterministicScannerDoesNotFlagParameterizedSql() {
-        String diff = "@@ -0,0 +1,2 @@\\n"
-                + "L1+ PreparedStatement statement = connection.prepareStatement(\\"SELECT * FROM users WHERE id = ?\\");\\n"
-                + "L2+ statement.setInt(1, id);\\n";
+        String diff = """
+                @@ -0,0 +1,2 @@
+                L1+ PreparedStatement statement = connection.prepareStatement("SELECT * FROM users WHERE id = ?");
+                L2+ statement.setInt(1, id);
+                """;
         assertTrue(StaticRuleScanner.scan(diff).isEmpty());
     }
 
