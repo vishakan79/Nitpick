@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 public class JwtService {
     private final SecretKey key;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public JwtService(Props props) {
         this(props.jwtSecret);
     }

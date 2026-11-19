@@ -17,6 +17,7 @@ public class CryptoService {
     private final SecretKeySpec key;
     private final SecureRandom random = new SecureRandom();
 
+    @org.springframework.beans.factory.annotation.Autowired
     public CryptoService(Props props) {
         this(props.encryptionKey);
     }
