@@ -17,11 +17,11 @@ public final class StaticRuleScanner {
     private static final Pattern SQL_KEYWORD = Pattern.compile(
             "(?i)\\b(SELECT|INSERT\\s+INTO|UPDATE\\s+\\w+|DELETE\\s+FROM)\\b");
     private static final Pattern CONCATENATED_VALUE = Pattern.compile(
-            "(?:\\"|')\\s*\\+\\s*[A-Za-z_$][A-Za-z0-9_$]*");
+            "\\"\\s*\\+\\s*[A-Za-z_$][A-Za-z0-9_$]*");
     private static final Pattern LOOP = Pattern.compile("\\b(for|while)\\s*\\(");
     private static final Pattern DATABASE_CALL = Pattern.compile(
             "(?i)(\\.executeQuery\\s*\\(|\\.executeUpdate\\s*\\(|\\.queryFor(List|Object|Map)\\s*\\(|\\bjdbc\\.query\\s*\\(|\\.(findBy|getBy|findAll|loadBy)\\w*\\s*\\()");
-    
+
     private StaticRuleScanner() {}
 
     public static List<Finding> scan(String labelledDiff) {
@@ -30,16 +30,14 @@ public final class StaticRuleScanner {
 
         int braceDepth = 0;
         Deque<Integer> loopDepths = new ArrayDeque<>();
-        boolean oneLineLoop = false;
-
         for (String raw : labelledDiff.split("\\R")) {
             Matcher lineMatcher = ADDED_LINE.matcher(raw);
             if (!lineMatcher.matches()) continue;
 
             int lineNumber = Integer.parseInt(lineMatcher.group(1));
             String code = lineMatcher.group(2);
-            String masked = maskStringsAndComments(code);
 
+            // Only flag a query when the SQL text itself is visibly concatenated with a variable.
             if (SQL_KEYWORD.matcher(code).find() && CONCATENATED_VALUE.matcher(code).find()) {
                 findings.add(new Finding(
                         lineNumber,
@@ -50,21 +48,17 @@ public final class StaticRuleScanner {
                         "Use a PreparedStatement with ? placeholders and bind each value with setString/setInt; do not concatenate values into SQL."));
             }
 
-            boolean startsLoop = LOOP.matcher(masked).find();
-            int opens = count(masked, '{');
-            int closes = count(masked, '}');
-            if (startsLoop && opens <= closes) {
-                oneLineLoop = true;
-            } else if (startsLoop && opens > closes) {
-                braceDepth += opens - closes;
+            boolean startsLoop = LOOP.matcher(code).find();
+            int opens = count(code, '{');
+            int closes = count(code, '}');
+            if (startsLoop && opens > closes) {
+                braceDepth = Math.max(0, braceDepth + opens - closes);
                 loopDepths.push(braceDepth);
-                oneLineLoop = false;
-            } else {
+            } else if (!startsLoop) {
                 braceDepth = Math.max(0, braceDepth + opens - closes);
             }
 
-            boolean insideLoop = oneLineLoop || !loopDepths.isEmpty();
-            if (insideLoop && DATABASE_CALL.matcher(masked).find()) {
+            if (!loopDepths.isEmpty() && DATABASE_CALL.matcher(code).find()) {
                 findings.add(new Finding(
                         lineNumber,
                         "warning",
@@ -74,8 +68,6 @@ public final class StaticRuleScanner {
                         "Fetch the required rows in one batched query using an IN clause, JOIN, or repository batch method, then map the results in memory."));
             }
 
-            // A one-line loop has no enclosing braces, so it applies only to this line.
-            oneLineLoop = false;
             while (!loopDepths.isEmpty() && braceDepth < loopDepths.peek()) {
                 loopDepths.pop();
             }
@@ -85,63 +77,9 @@ public final class StaticRuleScanner {
 
     private static int count(String value, char target) {
         int n = 0;
-        for (int i = 0; i < value.length(); i++) if (value.charAt(i) == target) n++;
-        return n;
-    }
-
-    /** Blanks literals and comments before counting braces or matching loop/query syntax. */
-    private static String maskStringsAndComments(String source) {
-        StringBuilder out = new StringBuilder(source.length());
-        boolean single = false, dbl = false, lineComment = false, blockComment = false, escaped = false;
-        for (int i = 0; i < source.length(); i++) {
-            char ch = source.charAt(i);
-            char next = i + 1 < source.length() ? source.charAt(i + 1) : '\\0';
-            if (lineComment) {
-                out.append(' ');
-                continue;
-            }
-            if (blockComment) {
-                if (ch == '*' && next == '/') {
-                    out.append("  ");
-                    i++;
-                    blockComment = false;
-                } else out.append(' ');
-                continue;
-            }
-            if (!single && !dbl && ch == '/' && next == '/') {
-                out.append("  ");
-                i++;
-                lineComment = true;
-                continue;
-            }
-            if (!single && !dbl && ch == '/' && next == '*') {
-                out.append("  ");
-                i++;
-                blockComment = true;
-                continue;
-            }
-            if (escaped) {
-                out.append(' ');
-                escaped = false;
-                continue;
-            }
-            if ((single || dbl) && ch == '\\\\') {
-                out.append(' ');
-                escaped = true;
-                continue;
-            }
-            if (!dbl && ch == '\\'') {
-                single = !single;
-                out.append(' ');
-                continue;
-            }
-            if (!single && ch == '"') {
-                dbl = !dbl;
-                out.append(' ');
-                continue;
-            }
-            out.append(single || dbl ? ' ' : ch);
+        for (int i = 0; i < value.length(); i++) {
+            if (value.charAt(i) == target) n++;
         }
-        return out.toString();
+        return n;
     }
 }
