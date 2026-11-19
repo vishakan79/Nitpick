@@ -8,8 +8,10 @@ import com.nitpick.ai.ReviewParser.Finding;
 import com.nitpick.github.GithubClient;
 import com.nitpick.security.CryptoService;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -57,6 +59,7 @@ public class ReviewService {
 
         JsonNode files = github.pullFiles(token, repo, number);
         List<Object[]> rows = new ArrayList<>();
+        Set<String> findingKeys = new HashSet<>();
         int fileCount = 0;
         int chunkCount = 0;
         if (files != null && files.isArray()) {
@@ -79,7 +82,19 @@ public class ReviewService {
                     }
                     for (Finding fd : ReviewParser.parse(content, c.addedLines())) {
                         if (!allowed(strict, fd.severity())) continue;
-                        rows.add(new Object[] {pullId, name, fd.line(), fd.severity(), fd.category(), fd.en(), fd.ta(), fd.fix()});
+                        String key = findingKey(name, fd);
+                        if (findingKeys.add(key)) {
+                            rows.add(new Object[] {pullId, name, fd.line(), fd.severity(), fd.category(), fd.en(), fd.ta(), fd.fix()});
+                        }
+                    }
+                    // Deterministic checks catch high-confidence security/performance issues
+                    // even when the language model overlooks an obvious pattern.
+                    for (Finding fd : StaticRuleScanner.scan(c.text())) {
+                        if (!allowed(strict, fd.severity())) continue;
+                        String key = findingKey(name, fd);
+                        if (findingKeys.add(key)) {
+                            rows.add(new Object[] {pullId, name, fd.line(), fd.severity(), fd.category(), fd.en(), fd.ta(), fd.fix()});
+                        }
                     }
                 }
             }
@@ -133,6 +148,10 @@ public class ReviewService {
             }
             github.postIssueComment(token, repo, number, sb.toString());
         }
+    }
+
+    private static String findingKey(String file, Finding finding) {
+        return file + ":" + finding.line() + ":" + finding.category().trim().toLowerCase(java.util.Locale.ROOT);
     }
 
     static String label(String sev) {
