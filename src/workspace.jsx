@@ -50,6 +50,7 @@ function useDemo() {
       saveSettings: async (s) => setSettings(s),
       toggleRepo: async (name, on) => setRepos((rs) => rs.map((x) => (x.name === name ? { ...x, on } : x))),
       resolveFinding: async (id, resolved) => setResolvedFindings((rs) => ({ ...rs, [id]: resolved })),
+      retryPull: async () => { throw new Error('Sign in with GitHub to retry a review.') },
       loadPull: async () => null,
     }),
     [rules, repos, settings, resolvedFindings],
@@ -158,6 +159,7 @@ function useLive() {
       saveSettings: (s) => act(() => api('/api/settings', { method: 'PUT', body: s })),
       toggleRepo: (name, on) => act(() => api('/api/repos/toggle', { method: 'POST', body: { fullName: name, enabled: on } })),
       resolveFinding: (id, resolved) => act(() => api(`/api/findings/${id}`, { method: 'PUT', body: { resolved } })),
+      retryPull: (id) => act(() => api(`/api/pulls/${id}/retry`, { method: 'POST' })),
       loadPull: (id) => api(`/api/pulls/${id}`),
     }
   }, [state, act])
