@@ -14,6 +14,21 @@ export function ago(iso) {
   return `${Math.round(s / 86400)} d ago`
 }
 
+function recentDateSeries(length) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return Array.from({ length }, (_, i) => {
+    const date = new Date(today)
+    date.setDate(today.getDate() - (length - i - 1))
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return year + '-' + month + '-' + day
+  })
+}
+
+const DEMO_TREND_DATES = recentDateSeries(sample.trend.length)
+
 const DEMO_STATS = [
   { label: 'Pull requests reviewed', to: 128, note: '18 more than last month' },
   { label: 'Issues caught', to: 342, note: '47 critical, 118 warnings' },
@@ -38,7 +53,7 @@ function useDemo() {
         { sev: 'suggestion', n: 177 },
       ],
       trend: sample.trend,
-      trendDates: null,
+      trendDates: DEMO_TREND_DATES,
       prs: sample.prs,
       findings: sample.findings.map((f) => ({ ...f, resolved: Boolean(resolvedFindings[f.id]) })),
       rules,
@@ -61,8 +76,8 @@ function normalize(d) {
   const s = d.stats
   const n = (v) => Number(v) || 0
   const total = n(s.critical) + n(s.warnings) + n(s.tips)
-  const trendRows = d.stats.trend.filter((t) => t.score != null)
-  const scores = trendRows.map((t) => Number(t.score))
+  const trendRows = Array.isArray(d.stats.trend) ? d.stats.trend : []
+  const scores = trendRows.map((t) => (t.score == null ? null : n(t.score)))
   return {
     stats: [
       { label: 'Pull requests reviewed', to: n(s.reviewed), note: `${d.pulls.length} pull requests seen so far` },
