@@ -143,7 +143,7 @@ public class ReviewService {
         };
     }
 
-    static boolean allowed(String strictness, String sev) {
+    public static boolean allowed(String strictness, String sev) {
         if ("light".equals(strictness)) return sev.equals("critical");
         // Balanced reviews include actionable testing/maintainability suggestions too.
         // The prompt explicitly excludes cosmetic/style-only nitpicks at this level.
