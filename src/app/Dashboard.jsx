@@ -17,7 +17,7 @@ export function PageHead({ title, sub, children }) {
 
 export default function Dashboard() {
   const ws = useWorkspace()
-  const open = ws.findings.filter((f) => f.sev === 'critical').slice(0, 4)
+  const open = ws.findings.filter((f) => f.sev === 'critical' && !f.resolved).slice(0, 4)
   return (
     <div className="space-y-4">
       <PageHead title="Dashboard" sub={`Last 30 days across ${ws.repos.filter((r) => r.on).length} ${ws.repos.filter((r) => r.on).length === 1 ? 'repository' : 'repositories'}`} />
