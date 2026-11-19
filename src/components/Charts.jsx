@@ -31,47 +31,101 @@ export function TrendChart({ data, dates, className = '' }) {
   const w = 700
   const h = 210
   const pad = { l: 42, r: 14, t: 14, b: 30 }
-  const min = 60
+  const points = data
+    .map((value, i) => ({ i, score: value == null ? null : Number(value) }))
+    .filter((point) => point.score != null && Number.isFinite(point.score))
+  const lowest = points.length ? Math.min(...points.map((point) => point.score)) : 60
+  const min = Math.max(0, Math.min(60, Math.floor(lowest / 10) * 10))
   const max = 100
   const x = (i) => pad.l + ((w - pad.l - pad.r) * i) / Math.max(data.length - 1, 1)
-  const y = (v) => pad.t + (h - pad.t - pad.b) * (1 - (v - min) / (max - min))
-  const line = data.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ')
-  const area = `${line} L${x(data.length - 1)} ${h - pad.b} L${x(0)} ${h - pad.b} Z`
-  const last = data.length - 1
-  const ticks = [60, 70, 80, 90, 100]
-  const labelIndexes = [...new Set([0, Math.round((data.length - 1) * 0.25), Math.round((data.length - 1) * 0.5), Math.round((data.length - 1) * 0.75), data.length - 1])]
-  const labels = dates
-    ? labelIndexes.map((i) => [i, fmt(dates[i])])
-    : labelIndexes.map((i) => [i, `Day ${i + 1}`])
+  const y = (value) => pad.t + (h - pad.t - pad.b) * (1 - (value - min) / (max - min))
+  const line = points
+    .map((point, index) => (index ? 'L' : 'M') + x(point.i).toFixed(1) + ' ' + y(point.score).toFixed(1))
+    .join(' ')
+  const first = points[0]
+  const lastPoint = points[points.length - 1]
+  const area = points.length > 1
+    ? line + ' L' + x(lastPoint.i).toFixed(1) + ' ' + (h - pad.b) + ' L' + x(first.i).toFixed(1) + ' ' + (h - pad.b) + ' Z'
+    : ''
+  const ticks = []
+  for (let tick = min; tick <= max; tick += 10) ticks.push(tick)
+  const lastIndex = Math.max(data.length - 1, 0)
+  const labelIndexes = [...new Set([
+    0,
+    Math.round(lastIndex * 0.25),
+    Math.round(lastIndex * 0.5),
+    Math.round(lastIndex * 0.75),
+    lastIndex,
+  ])]
+  const labels = labelIndexes.map((i) => [
+    i,
+    dates && dates[i] ? fmt(dates[i]) : 'Day ' + (i + 1),
+  ])
+  const animationKey = points.map((point) => point.i + ':' + point.score).join('|')
+  const latestDate = lastPoint && dates && dates[lastPoint.i] ? fmt(dates[lastPoint.i]) : 'latest review day'
+  const aria = points.length
+    ? 'Quality score trend over the last 30 days. ' + points.length + ' review days recorded. Latest score ' + lastPoint.score + ' on ' + latestDate + '.'
+    : 'No completed reviews in the last 30 days.'
+
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className={`w-full ${className}`} role="img" aria-label={`Quality score over the last ${data.length} days, now ${data[data.length - 1]}`}>
-      {ticks.map((t) => (
-        <g key={t}>
-          <line x1={pad.l} x2={w - pad.r} y1={y(t)} y2={y(t)} stroke="#D3D9E6" strokeWidth="1" />
-          <text x={pad.l - 8} y={y(t) + 4} textAnchor="end" fontSize="14" fill="#4A5670" fontFamily="Instrument Sans">
-            {t}
+    <svg viewBox={'0 0 ' + w + ' ' + h} className={'w-full ' + className} role="img" aria-label={aria}>
+      {ticks.map((tick) => (
+        <g key={tick}>
+          <line x1={pad.l} x2={w - pad.r} y1={y(tick)} y2={y(tick)} stroke="#D3D9E6" strokeWidth="1" />
+          <text x={pad.l - 8} y={y(tick) + 4} textAnchor="end" fontSize="14" fill="#4A5670" fontFamily="Instrument Sans">
+            {tick}
           </text>
         </g>
       ))}
-      {labels.map(([i, t]) => (
-        <text key={t} x={x(i)} y={h - 8} textAnchor={i === 0 ? 'start' : i === last ? 'end' : 'middle'} fontSize="14" fill="#4A5670" fontFamily="Instrument Sans">
-          {t}
+      {labels.map(([i, label]) => (
+        <text key={label + '-' + i} x={x(i)} y={h - 8} textAnchor={i === 0 ? 'start' : i === lastIndex ? 'end' : 'middle'} fontSize="14" fill="#4A5670" fontFamily="Instrument Sans">
+          {label}
         </text>
       ))}
-      <motion.path d={area} fill="#FFD84A" fillOpacity="0.4" initial={reduce ? false : { opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.9 }} />
-      <motion.path
-        d={line}
-        fill="none"
-        stroke="#0D1526"
-        strokeWidth="2.6"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-        initial={reduce ? false : { pathLength: 0 }}
-        whileInView={{ pathLength: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 1.5, ease: 'easeInOut' }}
-      />
-      <circle cx={x(last)} cy={y(data[last])} r="6" fill="#E4484F" stroke="#FAFBFE" strokeWidth="2.5" />
+      {area && (
+        <motion.path
+          key={'area-' + animationKey}
+          d={area}
+          fill="#FFD84A"
+          fillOpacity="0.4"
+          initial={reduce ? false : { opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: reduce ? 0 : 0.8, delay: reduce ? 0 : 0.9 }}
+        />
+      )}
+      {points.length > 1 && (
+        <motion.path
+          key={'line-' + animationKey}
+          d={line}
+          fill="none"
+          stroke="#0D1526"
+          strokeWidth="2.6"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          initial={reduce ? false : { pathLength: 0 }}
+          whileInView={{ pathLength: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: reduce ? 0 : 1.5, ease: 'easeInOut' }}
+        />
+      )}
+      {lastPoint && (
+        <motion.circle
+          key={'latest-' + animationKey}
+          cx={x(lastPoint.i)}
+          cy={y(lastPoint.score)}
+          r="6"
+          fill="#E4484F"
+          stroke="#FAFBFE"
+          strokeWidth="2.5"
+          initial={reduce ? false : { r: 0, opacity: 0 }}
+          whileInView={{ r: 6, opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: reduce ? 0 : 0.35, delay: reduce ? 0 : points.length > 1 ? 1.15 : 0.15 }}
+        >
+          <title>{'Score ' + lastPoint.score + ' on ' + latestDate}</title>
+        </motion.circle>
+      )}
     </svg>
   )
 }
