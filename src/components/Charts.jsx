@@ -31,13 +31,37 @@ export function TrendChart({ data, dates, className = '' }) {
   const w = 700
   const h = 210
   const pad = { l: 42, r: 14, t: 14, b: 30 }
+  const dayCount = 30
+
+  // Always render a 30-calendar-day axis, even when the API sends only
+  // the dates on which reviews actually happened.
+  const endDateKey = dates?.length
+    ? String(dates[dates.length - 1]).slice(0, 10)
+    : new Date().toISOString().slice(0, 10)
+  const endDate = new Date(endDateKey + 'T00:00:00.000Z')
+  const axisDates = Array.from({ length: dayCount }, (_, index) => {
+    const date = new Date(endDate)
+    date.setUTCDate(endDate.getUTCDate() - (dayCount - index - 1))
+    return date.toISOString().slice(0, 10)
+  })
+  const dayIndex = new Map(axisDates.map((date, index) => [date, index]))
+
   const points = data
-    .map((value, i) => ({ i, score: value == null ? null : Number(value) }))
-    .filter((point) => point.score != null && Number.isFinite(point.score))
+    .map((value, index) => {
+      if (value == null || !Number.isFinite(Number(value))) return null
+      const dateKey = dates?.[index] ? String(dates[index]).slice(0, 10) : null
+      const position = dateKey
+        ? dayIndex.get(dateKey)
+        : data.length === dayCount ? index : dayCount - 1
+      return position == null ? null : { i: position, score: Number(value), date: dateKey || axisDates[position] }
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.i - b.i)
+
   const lowest = points.length ? Math.min(...points.map((point) => point.score)) : 60
   const min = Math.max(0, Math.min(60, Math.floor(lowest / 10) * 10))
   const max = 100
-  const x = (i) => pad.l + ((w - pad.l - pad.r) * i) / Math.max(data.length - 1, 1)
+  const x = (i) => pad.l + ((w - pad.l - pad.r) * i) / (dayCount - 1)
   const y = (value) => pad.t + (h - pad.t - pad.b) * (1 - (value - min) / (max - min))
   const line = points
     .map((point, index) => (index ? 'L' : 'M') + x(point.i).toFixed(1) + ' ' + y(point.score).toFixed(1))
@@ -49,20 +73,10 @@ export function TrendChart({ data, dates, className = '' }) {
     : ''
   const ticks = []
   for (let tick = min; tick <= max; tick += 10) ticks.push(tick)
-  const lastIndex = Math.max(data.length - 1, 0)
-  const labelIndexes = [...new Set([
-    0,
-    Math.round(lastIndex * 0.25),
-    Math.round(lastIndex * 0.5),
-    Math.round(lastIndex * 0.75),
-    lastIndex,
-  ])]
-  const labels = labelIndexes.map((i) => [
-    i,
-    dates && dates[i] ? fmt(dates[i]) : 'Day ' + (i + 1),
-  ])
+  const labelIndexes = [0, 7, 15, 22, dayCount - 1]
+  const labels = labelIndexes.map((index) => [index, fmt(axisDates[index])])
   const animationKey = points.map((point) => point.i + ':' + point.score).join('|')
-  const latestDate = lastPoint && dates && dates[lastPoint.i] ? fmt(dates[lastPoint.i]) : 'latest review day'
+  const latestDate = lastPoint ? fmt(lastPoint.date) : 'latest review day'
   const aria = points.length
     ? 'Quality score trend over the last 30 days. ' + points.length + ' review days recorded. Latest score ' + lastPoint.score + ' on ' + latestDate + '.'
     : 'No completed reviews in the last 30 days.'
@@ -77,8 +91,8 @@ export function TrendChart({ data, dates, className = '' }) {
           </text>
         </g>
       ))}
-      {labels.map(([i, label]) => (
-        <text key={label + '-' + i} x={x(i)} y={h - 8} textAnchor={i === 0 ? 'start' : i === lastIndex ? 'end' : 'middle'} fontSize="14" fill="#4A5670" fontFamily="Instrument Sans">
+      {labels.map(([index, label]) => (
+        <text key={label + '-' + index} x={x(index)} y={h - 8} textAnchor={index === 0 ? 'start' : index === dayCount - 1 ? 'end' : 'middle'} fontSize="14" fill="#4A5670" fontFamily="Instrument Sans">
           {label}
         </text>
       ))}
