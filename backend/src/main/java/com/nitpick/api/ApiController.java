@@ -50,13 +50,25 @@ public class ApiController {
     @GetMapping("/stats")
     public Map<String, Object> stats(@AuthenticationPrincipal Long uid) {
         Map<String, Object> t = jdbc.queryForMap("""
-                SELECT count(*) FILTER (WHERE p.status='reviewed') AS reviewed,
-                       coalesce(sum(p.critical),0) AS critical, coalesce(sum(p.warnings),0) AS warnings,
-                       coalesce(sum(p.tips),0) AS tips,
-                       coalesce(round(avg(p.score) FILTER (WHERE p.status='reviewed')),0) AS avg_score,
-                       coalesce(round(extract(epoch FROM percentile_cont(0.5) WITHIN GROUP
-                         (ORDER BY (p.reviewed_at - p.created_at))) ),0) AS median_seconds
-                FROM pulls p JOIN repos r ON r.id=p.repo_id WHERE r.user_id=?""", uid);
+                WITH owned_repos AS (
+                    SELECT id FROM repos WHERE user_id=?
+                ),
+                user_pulls AS (
+                    SELECT p.* FROM pulls p JOIN owned_repos r ON r.id=p.repo_id
+                ),
+                user_findings AS (
+                    SELECT f.* FROM findings f JOIN user_pulls p ON p.id=f.pull_id
+                )
+                SELECT
+                    (SELECT count(*) FROM user_pulls WHERE status='reviewed') AS reviewed,
+                    (SELECT count(*) FROM user_findings WHERE severity='critical') AS critical,
+                    (SELECT count(*) FROM user_findings WHERE severity='warning') AS warnings,
+                    (SELECT count(*) FROM user_findings WHERE severity='suggestion') AS tips,
+                    coalesce((SELECT round(avg(score)) FROM user_pulls WHERE status='reviewed'),0) AS avg_score,
+                    coalesce((SELECT round(extract(epoch FROM percentile_cont(0.5) WITHIN GROUP
+                      (ORDER BY reviewed_at - created_at)))
+                      FROM user_pulls WHERE status='reviewed' AND reviewed_at IS NOT NULL),0) AS median_seconds
+                """, uid);
         Map<LocalDate, Integer> byDay = new HashMap<>();
         jdbc.query("""
                 SELECT (p.reviewed_at AT TIME ZONE 'UTC')::date AS d, round(avg(p.score)) AS s
@@ -102,9 +114,24 @@ public class ApiController {
     public List<Map<String, Object>> findings(@AuthenticationPrincipal Long uid) {
         return jdbc.queryForList("""
                 SELECT f.id, f.pull_id AS "pullId", p.number, r.full_name AS "repo", f.file, f.line, f.severity,
-                       f.category, f.message_en AS "en", f.message_ta AS "ta", f.fix, f.created_at AS "when"
+                       f.category, f.message_en AS "en", f.message_ta AS "ta", f.fix, f.resolved, f.created_at AS "when"
                 FROM findings f JOIN pulls p ON p.id=f.pull_id JOIN repos r ON r.id=p.repo_id
                 WHERE r.user_id=? ORDER BY f.created_at DESC, f.id LIMIT 200""", uid);
+    }
+
+    @PutMapping("/findings/{id}")
+    public ResponseEntity<Void> resolveFinding(
+            @AuthenticationPrincipal Long uid,
+            @PathVariable long id,
+            @RequestBody Map<String, Object> body) {
+        boolean resolved = Boolean.TRUE.equals(body.get("resolved"));
+        int updated = jdbc.update("""
+                UPDATE findings f
+                SET resolved=?
+                FROM pulls p JOIN repos r ON r.id=p.repo_id
+                WHERE f.pull_id=p.id AND f.id=? AND r.user_id=?
+                """, resolved, id, uid);
+        return updated == 0 ? ResponseEntity.notFound().build() : ResponseEntity.noContent().build();
     }
 
     @GetMapping("/rules")
