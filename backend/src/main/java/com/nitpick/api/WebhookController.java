@@ -16,11 +16,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class WebhookController {
     private final Props props;
     private final JdbcTemplate jdbc;
+    private final com.nitpick.review.PullQueue queue;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public WebhookController(Props props, JdbcTemplate jdbc) {
+    public WebhookController(Props props, JdbcTemplate jdbc, com.nitpick.review.PullQueue queue) {
         this.props = props;
         this.jdbc = jdbc;
+        this.queue = queue;
     }
 
     @PostMapping("/webhooks/github")
@@ -54,13 +56,8 @@ public class WebhookController {
         int number = pr.path("number").asInt();
         List<Long> repoIds = jdbc.queryForList("SELECT id FROM repos WHERE full_name=? AND enabled=TRUE", Long.class, repoName);
         for (Long repoId : repoIds) {
-            Long pullId = jdbc.queryForObject("""
-                    INSERT INTO pulls(repo_id, number, title, author, head_sha, status)
-                    VALUES (?,?,?,?,?,'queued')
-                    ON CONFLICT (repo_id, number) DO UPDATE SET title=EXCLUDED.title, head_sha=EXCLUDED.head_sha, status='queued', created_at=now()
-                    RETURNING id""", Long.class,
-                    repoId, number, pr.path("title").asText(""), pr.path("user").path("login").asText(""), pr.path("head").path("sha").asText(""));
-            jdbc.update("INSERT INTO jobs(pull_id) VALUES (?)", pullId);
+            queue.enqueue(repoId, number, pr.path("title").asText(""), pr.path("user").path("login").asText(""),
+                    pr.path("head").path("sha").asText(""));
         }
         return ResponseEntity.accepted().body(Map.of("status", "queued"));
     }

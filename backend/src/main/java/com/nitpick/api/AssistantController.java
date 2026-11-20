@@ -108,8 +108,12 @@ public class AssistantController {
 
         try {
             String raw = groq.complete(SYSTEM_PROMPT, userPrompt);
-            JsonNode parsed = mapper.readTree(raw);
-            String reply = parsed.path("reply").asText("").trim();
+            String reply;
+            try {
+                reply = mapper.readTree(raw).path("reply").asText("").trim();
+            } catch (Exception notJson) {
+                reply = raw == null ? "" : raw.trim();
+            }
             if (reply.isEmpty()) {
                 throw new IllegalStateException("The AI assistant returned an empty response.");
             }

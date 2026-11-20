@@ -9,6 +9,7 @@ public class Props {
     public final String githubClientSecret;
     public final String groqApiKey;
     public final String groqModel;
+    public final String groqFallbackModels;
     public final String jwtSecret;
     public final String encryptionKey;
     public final String webhookSecret;
@@ -20,6 +21,7 @@ public class Props {
             @Value("${GITHUB_CLIENT_SECRET:}") String githubClientSecret,
             @Value("${GROQ_API_KEY:}") String groqApiKey,
             @Value("${GROQ_MODEL:openai/gpt-oss-120b}") String groqModel,
+            @Value("${GROQ_FALLBACK_MODELS:openai/gpt-oss-20b}") String groqFallbackModels,
             @Value("${JWT_SECRET:}") String jwtSecret,
             @Value("${TOKEN_ENCRYPTION_KEY:}") String encryptionKey,
             @Value("${WEBHOOK_SECRET:}") String webhookSecret,
@@ -29,6 +31,7 @@ public class Props {
         this.githubClientSecret = githubClientSecret;
         this.groqApiKey = groqApiKey;
         this.groqModel = groqModel;
+        this.groqFallbackModels = groqFallbackModels;
         this.jwtSecret = jwtSecret;
         this.encryptionKey = encryptionKey;
         this.webhookSecret = webhookSecret;

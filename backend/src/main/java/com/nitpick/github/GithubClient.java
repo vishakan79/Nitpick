@@ -95,6 +95,11 @@ public class GithubClient {
         api(token).delete().uri("/repos/" + repo + "/hooks/" + hookId).retrieve().toBodilessEntity();
     }
 
+    public JsonNode openPulls(String token, String repo) {
+        return api(token).get().uri("/repos/" + repo + "/pulls?state=open&sort=updated&direction=desc&per_page=10")
+                .retrieve().body(JsonNode.class);
+    }
+
     public JsonNode pullFiles(String token, String repo, int number) {
         return api(token).get().uri("/repos/" + repo + "/pulls/" + number + "/files?per_page=100")
                 .retrieve().body(JsonNode.class);
