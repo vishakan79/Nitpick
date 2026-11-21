@@ -1,5 +1,6 @@
 package com.nitpick.review;
 
+import com.nitpick.messaging.ReviewBroker;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -7,9 +8,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class PullQueue {
     private final JdbcTemplate jdbc;
+    private final ReviewBroker broker;
 
-    public PullQueue(JdbcTemplate jdbc) {
+    public PullQueue(JdbcTemplate jdbc, ReviewBroker broker) {
         this.jdbc = jdbc;
+        this.broker = broker;
     }
 
     public void enqueue(long repoId, int number, String title, String author, String headSha) {
@@ -18,6 +21,8 @@ public class PullQueue {
                 VALUES (?,?,?,?,?,'queued')
                 ON CONFLICT (repo_id, number) DO UPDATE SET title=EXCLUDED.title, head_sha=EXCLUDED.head_sha, status='queued', created_at=now()
                 RETURNING id""", Long.class, repoId, number, title, author, headSha);
-        jdbc.update("INSERT INTO jobs(pull_id) VALUES (?)", pullId);
+        Long jobId = jdbc.queryForObject("INSERT INTO jobs(pull_id) VALUES (?) RETURNING id", Long.class, pullId);
+        // The row above is the source of truth; RabbitMQ only makes delivery instant.
+        if (jobId != null) broker.publish(jobId);
     }
 }

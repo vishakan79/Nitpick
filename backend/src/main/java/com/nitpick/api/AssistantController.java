@@ -38,8 +38,10 @@ public class AssistantController {
     private final JdbcTemplate jdbc;
     private final GroqClient groq;
     private final ObjectMapper mapper;
+    private final com.nitpick.messaging.RedisGate redis;
 
-    public AssistantController(JdbcTemplate jdbc, GroqClient groq, ObjectMapper mapper) {
+    public AssistantController(JdbcTemplate jdbc, GroqClient groq, ObjectMapper mapper, com.nitpick.messaging.RedisGate redis) {
+        this.redis = redis;
         this.jdbc = jdbc;
         this.groq = groq;
         this.mapper = mapper;
@@ -49,6 +51,9 @@ public class AssistantController {
     public ResponseEntity<Map<String, String>> chat(
             @AuthenticationPrincipal Long uid,
             @RequestBody Map<String, Object> body) throws Exception {
+        if (!redis.allow("rl:assistant:" + uid, 12, 60)) {
+            return ResponseEntity.status(429).body(Map.of("error", "You are sending messages too quickly. Please wait a minute and try again."));
+        }
         String message = String.valueOf(body.getOrDefault("message", "")).trim();
         if (message.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Please enter a message."));

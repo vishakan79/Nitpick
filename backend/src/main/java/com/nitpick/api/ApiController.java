@@ -29,8 +29,11 @@ public class ApiController {
     private final GithubClient github;
     private final CryptoService crypto;
     private final Props props;
+    private final com.nitpick.messaging.RedisGate redis;
+    private final com.fasterxml.jackson.databind.ObjectMapper json = new com.fasterxml.jackson.databind.ObjectMapper();
 
-    public ApiController(JdbcTemplate jdbc, GithubClient github, CryptoService crypto, Props props) {
+    public ApiController(JdbcTemplate jdbc, GithubClient github, CryptoService crypto, Props props, com.nitpick.messaging.RedisGate redis) {
+        this.redis = redis;
         this.jdbc = jdbc;
         this.github = github;
         this.crypto = crypto;
@@ -210,7 +213,7 @@ public class ApiController {
         String token = token(uid);
         Set<String> on = new HashSet<>(jdbc.queryForList("SELECT full_name FROM repos WHERE user_id=? AND enabled=TRUE", String.class, uid));
         List<Map<String, Object>> out = new ArrayList<>();
-        JsonNode list = github.listRepos(token);
+        JsonNode list = cachedRepoList(uid, token);
         if (list != null && list.isArray()) {
             for (JsonNode r : list) {
                 Map<String, Object> m = new HashMap<>();
@@ -222,6 +225,18 @@ public class ApiController {
             }
         }
         return out;
+    }
+
+    /** GitHub's repo list changes rarely, so keep it in Redis for a minute. Falls back to GitHub when Redis is off. */
+    private JsonNode cachedRepoList(Long uid, String token) {
+        String key = "repos:" + uid;
+        String hit = redis.get(key);
+        if (hit != null) {
+            try { return json.readTree(hit); } catch (Exception ignored) { }
+        }
+        JsonNode fresh = github.listRepos(token);
+        if (fresh != null && fresh.isArray()) redis.put(key, fresh.toString(), 60);
+        return fresh;
     }
 
     @PostMapping("/repos/toggle")

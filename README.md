@@ -31,3 +31,11 @@ React 18, Vite, Tailwind CSS, Framer Motion, React Router.
 ## Secrets
 
 Never commit API keys. The backend will read them from environment variables such as `GROQ_API_KEY`.
+
+## Queue and cache
+
+Review jobs are stored in Postgres (source of truth) and dispatched through RabbitMQ when `RABBITMQ_URL` is set. Failed jobs end up in the `nitpick.reviews.dlq` dead-letter queue. If RabbitMQ is missing or down, a Postgres poller (`FOR UPDATE SKIP LOCKED`) runs the jobs instead, so no review is lost.
+
+Redis (`REDIS_URL`) rate-limits the assistant and caches the GitHub repository list. It fails open: without Redis the app works the same, just without those two features.
+
+The version before RabbitMQ and Redis is tagged `v1.0-postgres-queue`.
