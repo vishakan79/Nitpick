@@ -66,9 +66,19 @@ public class ReviewBroker {
 
     private void connect() throws Exception {
         ConnectionFactory factory = new ConnectionFactory();
-        factory.setUri(url);
-        if (url.startsWith("amqps")) {
-            // setUri(amqps) trusts every certificate; verify the broker against the JVM trust store instead.
+        // Parse the URL ourselves: ConnectionFactory.setUri(amqps://...) installs a trust-everything TLS manager.
+        java.net.URI uri = new java.net.URI(url);
+        boolean tls = "amqps".equalsIgnoreCase(uri.getScheme());
+        factory.setHost(uri.getHost());
+        factory.setPort(uri.getPort() > 0 ? uri.getPort() : (tls ? 5671 : 5672));
+        if (uri.getUserInfo() != null) {
+            String[] credentials = uri.getUserInfo().split(":", 2);
+            factory.setUsername(credentials[0]);
+            if (credentials.length > 1) factory.setPassword(credentials[1]);
+        }
+        String vhost = uri.getPath() == null ? "" : uri.getPath().replaceFirst("^/", "");
+        factory.setVirtualHost(vhost.isEmpty() ? "/" : vhost);
+        if (tls) {
             factory.useSslProtocol(javax.net.ssl.SSLContext.getDefault());
             factory.enableHostnameVerification();
         }
