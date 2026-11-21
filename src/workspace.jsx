@@ -39,7 +39,7 @@ const DEMO_STATS = [
 function useDemo() {
   const [rules, setRules] = useState(sample.initialRules)
   const [repos, setRepos] = useState(sample.repos.map((r) => ({ name: `arun/${r.name}`, on: r.on })))
-  const [settings, setSettings] = useState({ lang: 'en', strictness: 'balanced', failCheck: false })
+  const [settings, setSettings] = useState({ strictness: 'balanced', failCheck: false })
   const [resolvedFindings, setResolvedFindings] = useState({})
   return useMemo(
     () => ({
@@ -103,7 +103,6 @@ function normalize(d) {
       sev: f.severity,
       cat: f.category,
       msg: f.en,
-      ta: f.ta,
       fix: f.fix,
       resolved: Boolean(f.resolved),
     })),

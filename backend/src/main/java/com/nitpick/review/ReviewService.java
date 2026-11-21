@@ -131,7 +131,7 @@ public class ReviewService {
     private void postToGithub(String token, String repo, int number, String sha, String lang, String summary, List<Object[]> rows) {
         List<Map<String, Object>> comments = new ArrayList<>();
         for (Object[] r : rows) {
-            String msg = "ta".equals(lang) ? (String) r[6] : (String) r[5];
+            String msg = (String) r[5];
             String fix = (String) r[7];
             StringBuilder body = new StringBuilder("**").append(label((String) r[3])).append(": ").append(r[4]).append("**\n\n").append(msg);
             if (fix != null && !fix.isBlank()) body.append("\n\n**Fix:** ").append(fix);
@@ -144,7 +144,7 @@ public class ReviewService {
             StringBuilder sb = new StringBuilder(summary).append("\n\n");
             for (Object[] r : rows) {
                 sb.append("- `").append(r[1]).append(":").append(r[2]).append("` ").append(label((String) r[3])).append(": ")
-                        .append("ta".equals(lang) ? r[6] : r[5]).append('\n');
+                        .append(r[5]).append('\n');
             }
             github.postIssueComment(token, repo, number, sb.toString());
         }
@@ -190,7 +190,6 @@ public class ReviewService {
         }
         sb.append("Reply with JSON only: {\"findings\":[{\"line\":12,\"severity\":\"critical|warning|suggestion\",")
                 .append("\"category\":\"short name like SQL injection\",\"message_en\":\"clear explanation in 1-2 sentences\",")
-                .append("\"message_ta\":\"the same explanation in Tanglish: Tamil written in English letters mixed with English technical words\",")
                 .append("\"fix\":\"short corrected code or advice\"}]}");
         return sb.toString();
     }

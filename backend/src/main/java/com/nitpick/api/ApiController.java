@@ -197,7 +197,7 @@ public class ApiController {
 
     @PutMapping("/settings")
     public Map<String, Object> saveSettings(@AuthenticationPrincipal Long uid, @RequestBody Map<String, Object> b) {
-        String lang = "ta".equals(b.get("lang")) ? "ta" : "en";
+        String lang = "en";
         Object s = b.get("strictness");
         String strict = "light".equals(s) || "strict".equals(s) ? (String) s : "balanced";
         jdbc.update("UPDATE users SET lang=?, strictness=?, fail_check=? WHERE id=?",

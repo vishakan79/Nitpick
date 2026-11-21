@@ -1,6 +1,6 @@
 # Nitpick
 
-AI code review on every GitHub pull request. Nitpick comments on the exact lines with bugs, security holes and slow queries, in English or Tanglish.
+AI code review on every GitHub pull request. Nitpick comments on the exact lines with bugs, security holes and slow queries.
 
 This repository currently holds the **frontend**: a marketing site and a demo dashboard that run on sample data. The Spring Boot backend (webhooks, RabbitMQ, Spring AI) comes next.
 

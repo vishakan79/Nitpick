@@ -71,27 +71,6 @@ export function RichText({ text }) {
   )
 }
 
-export function LangToggle({ lang, onChange, className = '' }) {
-  return (
-    <div role="group" aria-label="Explanation language" className={`inline-flex rounded-md border border-line bg-paper p-0.5 text-[13px] font-semibold ${className}`}>
-      {[
-        ['en', 'English'],
-        ['ta', 'Tanglish'],
-      ].map(([k, label]) => (
-        <button
-          key={k}
-          type="button"
-          aria-pressed={lang === k}
-          onClick={() => onChange(k)}
-          className={`rounded px-3 py-1 transition-colors ${lang === k ? 'bg-ink text-paper' : 'text-soft hover:text-ink'}`}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  )
-}
-
 export function Switch({ on, onChange, label }) {
   return (
     <button

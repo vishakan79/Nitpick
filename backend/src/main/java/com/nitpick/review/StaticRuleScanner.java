@@ -46,7 +46,7 @@ public final class StaticRuleScanner {
                         "critical",
                         "SQL injection",
                         "SQL is constructed by concatenating a variable into a query. If that value comes from a user or request, an attacker can change the SQL that runs.",
-                        "SQL query-ah variable-oda string join panni build pannirukkinga. User input vandha attacker query-ah maatha mudiyum.",
+                        "SQL is built by concatenating a variable. User input can change the query.",
                         "Use a PreparedStatement with ? placeholders and bind each value with setString/setInt; do not concatenate values into SQL."));
             }
 
@@ -67,7 +67,7 @@ public final class StaticRuleScanner {
                         "warning",
                         "N+1 query",
                         "A database query runs inside a loop, so the application can issue one query per item. This causes N+1 query behaviour as the list grows.",
-                        "Loop-kulla database query run aagudhu. List perusa aana ovvoru item-kum separate query pogum; idhu N+1 performance problem.",
+                        "A database query runs inside a loop, so each item triggers its own query.",
                         "Fetch the required rows in one batched query using an IN clause, JOIN, or repository batch method, then map the results in memory."));
             }
 

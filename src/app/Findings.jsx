@@ -61,7 +61,7 @@ export default function Findings() {
                     <span className="text-[13px] text-soft">{finding.cat}</span>
                     {done && <span className="rounded-full bg-leaf/10 px-2 py-0.5 text-[11px] font-semibold text-leaf">Resolved</span>}
                   </div>
-                  <p className={`max-w-[70ch] text-[15px] leading-snug ${done ? 'line-through' : ''}`}>{ws.settings.lang === 'ta' && finding.ta ? finding.ta : finding.msg}</p>
+                  <p className={`max-w-[70ch] text-[15px] leading-snug ${done ? 'line-through' : ''}`}>{finding.msg}</p>
                   {finding.fix && <p className="mt-2 max-w-[75ch] rounded-md bg-paper px-3 py-2 text-[13px] leading-relaxed text-soft"><strong className="text-ink">Suggested fix:</strong> {finding.fix}</p>}
                   <p className="mt-1.5 font-mono text-[12.5px] text-soft">
                     {finding.file}:{finding.line} ·{' '}

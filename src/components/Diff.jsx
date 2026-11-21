@@ -1,7 +1,7 @@
 import { SeverityTag, RichText } from './ui'
 import { SEV, comments } from '../data'
 
-export function CommentBlock({ c, lang }) {
+export function CommentBlock({ c }) {
   return (
     <div className={`my-2 ml-12 mr-3 border-l-4 bg-sheet py-3 pl-4 pr-4 font-sans ${SEV[c.sev].edge} shadow-[0_1px_0_0_#D3D9E6]`}>
       <div className="mb-1.5 flex items-center gap-2 text-[13px]">
@@ -10,7 +10,7 @@ export function CommentBlock({ c, lang }) {
         <span className="text-soft">Nitpick</span>
       </div>
       <p className="max-w-[62ch] whitespace-normal text-[14px] leading-relaxed text-ink">
-        <RichText text={lang === 'ta' ? c.ta : c.en} />
+        <RichText text={c.en} />
       </p>
       {c.fix && (
         <pre className="mt-2.5 overflow-x-auto rounded bg-ink px-3 py-2 font-mono text-[12px] leading-5 text-paper scroll-thin">
@@ -28,7 +28,7 @@ const KIND = {
   ctx: '',
 }
 
-export function DiffBlock({ file, lines, lang = 'en', showComments = true }) {
+export function DiffBlock({ file, lines, showComments = true }) {
   return (
     <div className="overflow-hidden rounded-md border border-ink bg-white">
       <div className="flex items-center justify-between border-b border-line bg-paper px-4 py-2 font-mono text-[12px] text-soft">
@@ -42,7 +42,7 @@ export function DiffBlock({ file, lines, lang = 'en', showComments = true }) {
               <span className={`w-5 shrink-0 select-none ${l.k === 'add' ? 'text-leaf' : 'text-soft/60'}`}>{l.k === 'add' ? '+' : ''}</span>
               <span className="whitespace-pre pr-6">{l.t}</span>
             </div>
-            {showComments && l.c && <CommentBlock c={comments[l.c]} lang={lang} />}
+            {showComments && l.c && <CommentBlock c={comments[l.c]} />}
           </div>
         ))}
       </div>

@@ -8,20 +8,20 @@ export const SEV = {
 
 export const repos = [
   { name: 'order-service', on: true },
-  { name: 'payments-api', on: true },
+  { name: 'accounts-api', on: true },
   { name: 'inventory-ui', on: true },
   { name: 'legacy-batch', on: false },
 ]
 
 export const prs = [
-  { id: 214, title: 'Add refund endpoint', repo: 'payments-api', author: 'Priya', status: 'running', score: null, when: '4 min ago', c: 0, w: 0, s: 0 },
+  { id: 214, title: 'Add refund endpoint', repo: 'accounts-api', author: 'Priya', status: 'running', score: null, when: '4 min ago', c: 0, w: 0, s: 0 },
   { id: 213, title: 'Fix N+1 in order list', repo: 'order-service', author: 'Arun', status: 'reviewed', score: 92, when: '22 min ago', c: 0, w: 1, s: 3 },
   { id: 212, title: 'JWT refresh rotation', repo: 'order-service', author: 'Arun', status: 'reviewed', score: 68, when: '1 hr ago', c: 1, w: 2, s: 2 },
   { id: 211, title: 'Inventory table filters', repo: 'inventory-ui', author: 'Meena', status: 'reviewed', score: 88, when: '3 hr ago', c: 0, w: 1, s: 4 },
-  { id: 210, title: 'Raw SQL report query', repo: 'payments-api', author: 'Karthik', status: 'reviewed', score: 41, when: '5 hr ago', c: 3, w: 2, s: 1 },
+  { id: 210, title: 'Raw SQL report query', repo: 'accounts-api', author: 'Karthik', status: 'reviewed', score: 41, when: '5 hr ago', c: 3, w: 2, s: 1 },
   { id: 209, title: 'Upgrade Spring Boot to 3.4', repo: 'order-service', author: 'Arun', status: 'queued', score: null, when: '1 day ago', c: 0, w: 0, s: 0 },
   { id: 208, title: 'Cache product lookups', repo: 'order-service', author: 'Meena', status: 'reviewed', score: 85, when: '1 day ago', c: 0, w: 2, s: 2 },
-  { id: 207, title: 'Add Flyway migrations', repo: 'payments-api', author: 'Priya', status: 'reviewed', score: 90, when: '2 days ago', c: 0, w: 0, s: 3 },
+  { id: 207, title: 'Add Flyway migrations', repo: 'accounts-api', author: 'Priya', status: 'reviewed', score: 90, when: '2 days ago', c: 0, w: 0, s: 3 },
   { id: 206, title: 'Rate limit the login endpoint', repo: 'order-service', author: 'Karthik', status: 'reviewed', score: 74, when: '2 days ago', c: 1, w: 1, s: 2 },
   { id: 205, title: 'Fix date parsing bug', repo: 'inventory-ui', author: 'Meena', status: 'reviewed', score: 95, when: '3 days ago', c: 0, w: 0, s: 1 },
 ]
@@ -31,18 +31,18 @@ export const trend = [
 ]
 
 export const findings = [
-  { id: 1, pr: 210, repo: 'payments-api', file: 'ReportRepository.java', line: 13, sev: 'critical', cat: 'Security', msg: 'SQL is built by joining strings, so user input can change the query.' },
-  { id: 2, pr: 210, repo: 'payments-api', file: 'ReportRepository.java', line: 31, sev: 'critical', cat: 'Security', msg: 'Same pattern here: the date range is concatenated into the query.' },
-  { id: 3, pr: 210, repo: 'payments-api', file: 'ReportService.java', line: 58, sev: 'warning', cat: 'Performance', msg: 'This loads the whole table into memory before filtering.' },
+  { id: 1, pr: 210, repo: 'accounts-api', file: 'ReportRepository.java', line: 13, sev: 'critical', cat: 'Security', msg: 'SQL is built by joining strings, so user input can change the query.' },
+  { id: 2, pr: 210, repo: 'accounts-api', file: 'ReportRepository.java', line: 31, sev: 'critical', cat: 'Security', msg: 'Same pattern here: the date range is concatenated into the query.' },
+  { id: 3, pr: 210, repo: 'accounts-api', file: 'ReportService.java', line: 58, sev: 'warning', cat: 'Performance', msg: 'This loads the whole table into memory before filtering.' },
   { id: 4, pr: 212, repo: 'order-service', file: 'TokenService.java', line: 43, sev: 'critical', cat: 'Security', msg: 'Refresh tokens are not invalidated after use, so a stolen token works forever.' },
   { id: 5, pr: 212, repo: 'order-service', file: 'TokenService.java', line: 45, sev: 'warning', cat: 'Bug', msg: 'Returning null for an expired token causes a NullPointerException in the caller.' },
   { id: 6, pr: 213, repo: 'order-service', file: 'OrderService.java', line: 29, sev: 'warning', cat: 'Performance', msg: 'One query per order. Load all customers with a single findAllById call.' },
   { id: 7, pr: 211, repo: 'inventory-ui', file: 'FilterBar.tsx', line: 72, sev: 'warning', cat: 'Bug', msg: 'This effect depends on an object created on every render, so it runs in a loop.' },
   { id: 8, pr: 206, repo: 'order-service', file: 'LoginController.java', line: 24, sev: 'critical', cat: 'Security', msg: 'The rate limit key uses the X-Forwarded-For header, which clients can set themselves.' },
   { id: 9, pr: 208, repo: 'order-service', file: 'ProductCache.java', line: 17, sev: 'warning', cat: 'Bug', msg: 'The cache has no expiry, so price changes never show up.' },
-  { id: 10, pr: 214, repo: 'payments-api', file: 'RefundService.java', line: 22, sev: 'suggestion', cat: 'Testing', msg: 'No test covers a refund larger than the amount paid.' },
+  { id: 10, pr: 214, repo: 'accounts-api', file: 'RefundService.java', line: 22, sev: 'suggestion', cat: 'Testing', msg: 'No test covers a refund larger than the amount paid.' },
   { id: 11, pr: 211, repo: 'inventory-ui', file: 'InventoryTable.tsx', line: 9, sev: 'suggestion', cat: 'Style', msg: 'Prefer a named type over an inline object type repeated in three props.' },
-  { id: 12, pr: 207, repo: 'payments-api', file: 'V4__add_index.sql', line: 3, sev: 'suggestion', cat: 'Performance', msg: 'Create this index concurrently so the table is not locked while it builds.' },
+  { id: 12, pr: 207, repo: 'accounts-api', file: 'V4__add_index.sql', line: 3, sev: 'suggestion', cat: 'Performance', msg: 'Create this index concurrently so the table is not locked while it builds.' },
 ]
 
 export const initialRules = [
@@ -54,41 +54,36 @@ export const initialRules = [
   { id: 6, text: 'Use constructor injection, not @Autowired fields.', on: true },
 ]
 
-// A comment has English and Tanglish text. Backticks mark inline code.
+// A comment has an explanation and an optional fix. Backticks mark inline code.
 export const comments = {
   sql: {
     sev: 'critical',
     cat: 'Security',
     en: 'This query is built by joining strings, so `id` can change what the query does. A value like `x\' OR \'1\'=\'1` would return every order. Bind it as a parameter.',
-    ta: 'Idhu string-a join panni query ezhudhirukinga, so `id` vazhiya yaaru venumnaalum query-a maathalaam. `x\' OR \'1\'=\'1` kudutha ella orders-um varum. Parameter-a bind pannunga.',
     fix: 'jdbc.queryForObject("SELECT * FROM orders WHERE id = ?", mapper, id);',
   },
   nplus1: {
     sev: 'warning',
     cat: 'Performance',
     en: 'This runs one database call per item. An order with 50 items makes 51 queries. Fetch all the products in one query and look them up in a map.',
-    ta: 'Oru item-ku oru DB call pogudhu. 50 items irundha 51 queries aagum. Ella products-um ore query-la eduthu, map-la thedunga.',
     fix: 'var products = productRepo.findAllById(ids);',
   },
   nullexp: {
     sev: 'warning',
     cat: 'Bug',
     en: 'Returning `null` for an expired token makes the caller fail with a NullPointerException two layers up. Throw a `TokenExpiredException` so the API can answer 401.',
-    ta: 'Expired token-ku `null` return panna, rendu layer mela NullPointerException varum. `TokenExpiredException` throw pannunga, appo API 401 sollum.',
     fix: 'throw new TokenExpiredException(claims.getId());',
   },
   tests: {
     sev: 'suggestion',
     cat: 'Testing',
     en: '`create` has three branches (full refund, partial refund, amount over the paid total) and no test covers any of them. Here is a starting point for the over-total case.',
-    ta: '`create`-la moonu branches irukku (full, partial, paid amount-ku mela). Edhukkum test illa. Over-total case-ku oru starting test inge irukku.',
     fix: 'assertThrows(RefundTooLargeException.class, () -> service.create(req(150, 100)));',
   },
   inject: {
     sev: 'suggestion',
     cat: 'Style',
     en: 'Field injection hides what this class depends on and makes it hard to test. Take `OrderRepository` in the constructor instead.',
-    ta: 'Field injection la dependency theriyaadhu, test panna kashtam. `OrderRepository`-a constructor-la vaanguinga.',
     fix: 'public OrderController(OrderRepository repo) { this.repo = repo; }',
   },
 }
@@ -192,10 +187,6 @@ export const faq = [
   {
     q: 'How do custom rules work?',
     a: 'Write a rule as a plain sentence, like "Controllers must not call repositories directly." Nitpick checks every pull request against your enabled rules and flags the lines that break them.',
-  },
-  {
-    q: 'What is Tanglish mode?',
-    a: 'Explanations written in Tamil and English mixed together, the way many Tamil developers talk about code. Turn it on per repository, and the comments on GitHub change with it.',
   },
   {
     q: 'How long does a review take?',

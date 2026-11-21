@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ArrowRight, Check, Menu, X } from 'lucide-react'
-import { Button, GithubIcon, Logo, LogoMark, Switch, LangToggle, RichText } from '../components/ui'
+import { Button, GithubIcon, Logo, LogoMark, Switch, RichText } from '../components/ui'
 import ReviewWindow from '../components/ReviewWindow'
 import Illustration from '../components/Illustration'
 import { DiffBlock } from '../components/Diff'
@@ -14,7 +14,6 @@ const LINKS = [
   ['How it works', '#how'],
   ['What it catches', '#catches'],
   ['Dashboard', '#dashboard'],
-  ['Pricing', '#pricing'],
   ['FAQ', '#faq'],
 ]
 
@@ -82,7 +81,7 @@ function Hero() {
         Nitpick reads every pull request before your teammates do.
       </h1>
       <p className="mx-auto mt-6 max-w-[54ch] text-[18px] leading-relaxed text-soft sm:text-[19px]">
-        It comments on the exact lines with bugs, security holes and slow queries, usually within a minute of the pull request opening. Switch it to Tanglish when that explains things faster.
+        It comments on the exact lines with bugs, security holes and slow queries, usually within a minute of the pull request opening.
       </p>
       <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
         <Button as="link" to="/login">
@@ -263,7 +262,6 @@ function HowItWorks() {
 
 function Catches() {
   const [i, setI] = useState(0)
-  const [lang, setLang] = useState('en')
   const cur = catches[i]
   return (
     <section id="catches" className="mx-auto max-w-[1120px] px-5 py-16 sm:py-24">
@@ -291,11 +289,10 @@ function Catches() {
         <div id="catch-panel" role="tabpanel" className="min-w-0" aria-labelledby={`tab-${cur.key}`}>
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="text-[14px] text-soft lg:hidden">{cur.blurb}</p>
-            <LangToggle lang={lang} onChange={setLang} className="ml-auto" />
           </div>
           <AnimatePresence mode="wait">
             <motion.div key={cur.key} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              <DiffBlock file={cur.file} lines={cur.lines} lang={lang} />
+              <DiffBlock file={cur.file} lines={cur.lines} />
             </motion.div>
           </AnimatePresence>
         </div>
@@ -336,17 +333,11 @@ function FeatureRows() {
               <RichText text={comments.nplus1.en} />
             </p>
           </div>
-          <div className="rounded-lg border-2 border-ink bg-hl/40 p-4">
-            <p className="mb-1.5 text-[13px] font-semibold">Tanglish</p>
-            <p className="text-[15px] leading-relaxed">
-              <RichText text={comments.nplus1.ta} />
-            </p>
-          </div>
         </div>
         <div className="order-1 md:order-2">
-          <h2 className="text-[32px] font-extrabold leading-[1.05] sm:text-[44px]">Explained the way you would explain it to a friend.</h2>
+          <h2 className="text-[32px] font-extrabold leading-[1.05] sm:text-[44px]">Explained the way you would explain it to a teammate.</h2>
           <p className="mt-4 max-w-[48ch] text-[17px] leading-relaxed text-soft">
-            A comment you understand at once gets fixed at once. Turn on Tanglish per repository and the same finding is written in the Tamil and English mix your team already speaks.
+            A comment you understand at once gets fixed at once. Each finding says what is wrong, why it matters and how to fix it.
           </p>
         </div>
       </div>
@@ -438,48 +429,6 @@ function UnderTheHood() {
   )
 }
 
-const PLANS = [
-  { name: 'Free', price: '₹0', per: 'for public repositories', cta: 'Start free', items: ['3 repositories', '50 reviews a month', 'English and Tanglish', 'Community support'] },
-  { name: 'Pro', price: '₹499', per: 'per month', cta: 'Install on GitHub', hot: true, items: ['20 repositories', '1,000 reviews a month', 'Custom rules in plain sentences', 'Status checks on critical findings', 'Priority queue'] },
-  { name: 'Team', price: '₹1,999', per: 'per month', cta: 'Talk to us', items: ['Unlimited repositories', '5,000 reviews a month', 'Rules shared across repositories', 'Quality trends export', 'Email support'] },
-]
-
-function Pricing() {
-  return (
-    <section id="pricing" className="border-t-2 border-ink bg-sheet">
-      <div className="mx-auto max-w-[1120px] px-5 py-16 sm:py-24">
-        <h2 className="max-w-[18ch] text-[36px] font-extrabold leading-[1.02] sm:text-[52px]">Pay for reviews, not seats.</h2>
-        <p className="mt-4 max-w-[52ch] text-[17px] leading-relaxed text-soft">Every plan includes the dashboard and both explanation languages. Prices are placeholders while Nitpick is in preview.</p>
-        <div className="mt-12 grid items-start gap-6 md:grid-cols-3">
-          {PLANS.map((p) => (
-            <div
-              key={p.name}
-              className={`rounded-lg border-2 border-ink p-6 ${p.hot ? 'bg-ink text-paper shadow-[8px_8px_0_0_#FFD84A] md:-mt-4 md:pb-9' : 'bg-paper'}`}
-            >
-              <h3 className="font-display text-[22px] font-bold">{p.name}</h3>
-              <p className="mt-3 flex items-baseline gap-2">
-                <span className="font-display text-[44px] font-extrabold leading-none">{p.price}</span>
-                <span className={`text-[14px] ${p.hot ? 'text-paper/70' : 'text-soft'}`}>{p.per}</span>
-              </p>
-              <ul className="mt-6 space-y-2.5">
-                {p.items.map((it) => (
-                  <li key={it} className="flex items-start gap-2.5 text-[15px]">
-                    <Check size={18} className={`mt-0.5 shrink-0 ${p.hot ? 'text-hl' : 'text-leaf'}`} strokeWidth={3} />
-                    {it}
-                  </li>
-                ))}
-              </ul>
-              <Button as="link" to="/login" variant={p.hot ? 'light' : 'ghost'} className="mt-7 w-full">
-                {p.cta}
-              </Button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
 function Faq() {
   return (
     <section id="faq" className="mx-auto max-w-[820px] px-5 py-16 sm:py-24">
@@ -534,11 +483,6 @@ function Footer() {
             </a>
           </li>
           <li>
-            <a href="#pricing" className="hover:underline">
-              Pricing
-            </a>
-          </li>
-          <li>
             <Link to="/demo" className="hover:underline">
               Demo dashboard
             </Link>
@@ -561,7 +505,6 @@ export default function Landing() {
       <FeatureRows />
       <DashboardPreview />
       <UnderTheHood />
-      <Pricing />
       <Faq />
       <FinalCta />
       <Footer />

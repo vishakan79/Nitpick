@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { RotateCcw } from 'lucide-react'
 import { comments } from '../data'
-import { LangToggle, SeverityTag, RichText } from './ui'
+import { SeverityTag, RichText } from './ui'
 
 // Each line is plain text, or an array mixing text and flagged spans.
 const LINES = [
@@ -41,7 +41,7 @@ function Flag({ on, children }) {
   )
 }
 
-function Comment({ id, lang }) {
+function Comment({ id }) {
   const c = comments[id]
   return (
     <motion.div
@@ -56,7 +56,7 @@ function Comment({ id, lang }) {
           <span className="font-semibold">{c.cat}</span>
         </div>
         <p className="whitespace-normal text-[13.5px] leading-relaxed">
-          <RichText text={lang === 'ta' ? c.ta : c.en} />
+          <RichText text={c.en} />
         </p>
         <pre className="mt-2 overflow-x-auto rounded bg-ink px-3 py-1.5 font-mono text-[11.5px] leading-5 text-paper scroll-thin">
           <span className="select-none text-hl">+ </span>
@@ -71,7 +71,6 @@ export default function ReviewWindow() {
   const reduce = useReducedMotion()
   const [step, setStep] = useState(0)
   const [run, setRun] = useState(0)
-  const [lang, setLang] = useState('en')
 
   useEffect(() => {
     if (reduce) {
@@ -94,7 +93,6 @@ export default function ReviewWindow() {
           <p className="truncate font-mono text-[12px] text-soft">order-service #214 · OrderController.java</p>
         </div>
         <div className="flex items-center gap-2">
-          <LangToggle lang={lang} onChange={setLang} />
           <button
             type="button"
             onClick={() => setRun((r) => r + 1)}
@@ -137,7 +135,7 @@ export default function ReviewWindow() {
                 )}
               </span>
             </div>
-            <AnimatePresence>{commented(line) && <Comment id={line.mark} lang={lang} />}</AnimatePresence>
+            <AnimatePresence>{commented(line) && <Comment id={line.mark} />}</AnimatePresence>
           </div>
         ))}
       </div>

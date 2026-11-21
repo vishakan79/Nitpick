@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { Check } from 'lucide-react'
 import { PageHead } from './Dashboard'
-import { Button, LangToggle, Switch } from '../components/ui'
+import { Button, Switch } from '../components/ui'
 import { Panel } from '../components/DashboardParts'
 import { useWorkspace } from '../workspace'
 
 export default function Settings() {
   const ws = useWorkspace()
-  const [lang, setLang] = useState(ws.settings.lang)
   const [strict, setStrict] = useState(ws.settings.strictness)
   const [checks, setChecks] = useState(ws.settings.failCheck)
   const [saved, setSaved] = useState(false)
@@ -17,7 +16,7 @@ export default function Settings() {
   const save = async () => {
     setError('')
     try {
-      await ws.saveSettings({ lang, strictness: strict, failCheck: checks })
+      await ws.saveSettings({ strictness: strict, failCheck: checks })
       setSaved(true)
       setTimeout(() => setSaved(false), 2400)
     } catch (e) {
@@ -41,11 +40,6 @@ export default function Settings() {
     <div className="max-w-[820px]">
       <PageHead title="Settings" sub="These apply to every repository Nitpick watches." />
       <div className="space-y-4">
-        <Panel title="Explanation language">
-          <p className="mb-4 max-w-[58ch] text-[14.5px] leading-relaxed text-soft">Comments on GitHub are written in this language. Tanglish mixes Tamil and English.</p>
-          <LangToggle lang={lang} onChange={setLang} />
-        </Panel>
-
         <Panel title="How strict should reviews be?">
           <div role="radiogroup" aria-label="Review strictness" className="grid gap-3 sm:grid-cols-3">
             {[

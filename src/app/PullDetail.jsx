@@ -24,7 +24,6 @@ export default function PullDetail() {
   const ws = useWorkspace()
   const base = ws.base
   const pr = ws.prs.find((p) => String(p.id) === id)
-  const [lang, setLang] = useState(ws.settings.lang || 'en')
   const [detail, setDetail] = useState(null)
   const [retrying, setRetrying] = useState(false)
   const [retryError, setRetryError] = useState('')
@@ -111,9 +110,8 @@ export default function PullDetail() {
           <div className="min-w-0">
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-display text-[20px] font-bold">Changes with comments</h2>
-              <LangToggle lang={lang} onChange={setLang} />
             </div>
-            <DiffBlock file={detailDiff.file} lines={detailDiff.lines} lang={lang} />
+            <DiffBlock file={detailDiff.file} lines={detailDiff.lines} />
           </div>
           <aside className="rounded-lg border border-line bg-sheet p-5">
             <h2 className="mb-4 font-display text-[18px] font-bold">Findings in this file</h2>
@@ -138,7 +136,6 @@ export default function PullDetail() {
           {detail?.summary && <p className="mb-5 text-[15px] text-soft">{detail.summary}</p>}
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-display text-[20px] font-bold">Comments posted on GitHub</h2>
-            <LangToggle lang={lang} onChange={setLang} />
           </div>
           {!detail ? (
             <p className="text-soft">Loading comments</p>
@@ -152,7 +149,7 @@ export default function PullDetail() {
                     {f.file}:{f.line}
                   </p>
                   <div className="-ml-12">
-                    <CommentBlock c={{ sev: f.severity, cat: f.category, en: f.en, ta: f.ta, fix: f.fix }} lang={lang} />
+                    <CommentBlock c={{ sev: f.severity, cat: f.category, en: f.en, fix: f.fix }} />
                   </div>
                 </li>
               ))}
