@@ -67,6 +67,11 @@ public class ReviewBroker {
     private void connect() throws Exception {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setUri(url);
+        if (url.startsWith("amqps")) {
+            // setUri(amqps) trusts every certificate; verify the broker against the JVM trust store instead.
+            factory.useSslProtocol(javax.net.ssl.SSLContext.getDefault());
+            factory.enableHostnameVerification();
+        }
         factory.setConnectionTimeout(10_000);
         factory.setRequestedHeartbeat(30);
         factory.setAutomaticRecoveryEnabled(true);
