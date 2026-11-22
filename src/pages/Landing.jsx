@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { ArrowRight, Check, Menu, X } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Check, Linkedin, Menu, X } from 'lucide-react'
 import { Button, GithubIcon, Logo, LogoMark, Switch, RichText } from '../components/ui'
 import ReviewWindow from '../components/ReviewWindow'
 import Illustration from '../components/Illustration'
@@ -10,10 +10,14 @@ import { TrendChart } from '../components/Charts'
 import { SeverityPanel, StatRow, TrendPanel, ReviewsTable, Panel } from '../components/DashboardParts'
 import { catches, comments, faq, initialRules, trend, prs } from '../data'
 
+const LINKEDIN = 'https://www.linkedin.com/in/vishakan-s/'
+const GITHUB_PROFILE = 'https://github.com/vishakan79'
+
 const LINKS = [
   ['How it works', '#how'],
   ['What it catches', '#catches'],
-  ['Dashboard', '#dashboard'],
+  ['Security', '#security'],
+  ['Founder', '#founder'],
   ['FAQ', '#faq'],
 ]
 
@@ -125,6 +129,106 @@ function InPlainWords() {
             </div>
           ))}
         </dl>
+      </div>
+    </section>
+  )
+}
+
+function Benefits() {
+  const items = [
+    ['Faster merges', 'The first review happens in seconds, so authors fix the obvious problems before a teammate opens the pull request. Reviewers start from a cleaner change.'],
+    ['Fewer bugs in production', 'Query built from user input, missing null check, secret typed into the code: the mistakes that cause incidents are flagged on the line where they were written.'],
+    ['The same standard every time', 'Write your team rules as plain sentences. Nitpick applies them to every pull request, on a Friday evening as much as on a Monday morning.'],
+    ['Juniors learn while they ship', 'Each comment explains what is wrong, why it matters and how to fix it, so the feedback teaches instead of just blocking.'],
+  ]
+  return (
+    <section aria-labelledby="benefits" className="mx-auto max-w-[1120px] px-5 py-16 sm:py-24">
+      <h2 id="benefits" className="max-w-[22ch] text-[36px] font-extrabold leading-[1.02] sm:text-[52px]">
+        What your team gets.
+      </h2>
+      <div className="mt-12 grid gap-x-12 gap-y-10 md:grid-cols-2">
+        {items.map(([t, d]) => (
+          <div key={t} className="border-t-2 border-ink pt-4">
+            <h3 className="font-display text-[22px] font-bold leading-tight">{t}</h3>
+            <p className="mt-2 max-w-[52ch] text-[16px] leading-relaxed text-soft">{d}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function Security() {
+  const items = [
+    ['Your repository is not stored', 'Nitpick reads the diff of a pull request, sends it to the AI model, and drops it once the comments are posted. It keeps the findings, file names and scores so your dashboard works.'],
+    ['What leaves GitHub', 'The pull request diff is sent to the AI provider (Groq) to write the review. Nothing else from your repository is sent.'],
+    ['It cannot merge or approve', 'Nitpick only posts review comments. It never merges, approves, closes or edits your code.'],
+    ['Signed events only', 'Every GitHub event is checked against its HMAC-SHA256 signature before anything is queued. Unsigned requests are rejected.'],
+    ['Encrypted access tokens', 'Your GitHub access token is encrypted at rest. Sign in uses GitHub OAuth, and you can revoke access at any time in your GitHub settings.'],
+    ['Open source', 'Every line is public on GitHub, so your team can read exactly what runs on your pull requests.'],
+  ]
+  return (
+    <section id="security" className="border-y-2 border-ink bg-sheet">
+      <div className="mx-auto max-w-[1120px] px-5 py-16 sm:py-24">
+        <h2 className="max-w-[20ch] text-[36px] font-extrabold leading-[1.02] sm:text-[52px]">Clear about what it sees and what it does.</h2>
+        <p className="mt-4 max-w-[58ch] text-[17px] leading-relaxed text-soft">
+          A tool that reads your code should say plainly what it does with it. Nitpick currently works on public repositories.
+        </p>
+        <dl className="mt-12 grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map(([t, d]) => (
+            <div key={t}>
+              <dt className="flex items-start gap-2.5 font-display text-[19px] font-bold leading-tight">
+                <Check size={20} strokeWidth={3} className="mt-0.5 shrink-0 text-leaf" aria-hidden="true" />
+                {t}
+              </dt>
+              <dd className="mt-2 pl-[30px] text-[15px] leading-relaxed text-soft">{d}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  )
+}
+
+function Founder() {
+  const [broken, setBroken] = useState(false)
+  return (
+    <section id="founder" className="mx-auto max-w-[1120px] px-5 py-16 sm:py-24">
+      <div className="grid items-center gap-10 md:grid-cols-[240px_1fr] md:gap-16">
+        <div className="mx-auto w-[200px] md:w-full">
+          {broken ? (
+            <div className="grid aspect-square place-items-center rounded-xl border-2 border-ink bg-hl font-display text-[64px] font-extrabold shadow-[8px_8px_0_0_#0D1526]">VS</div>
+          ) : (
+            <img
+              src="https://github.com/vishakan79.png?size=480"
+              alt="Vishakan S"
+              width="240"
+              height="240"
+              loading="lazy"
+              onError={() => setBroken(true)}
+              className="aspect-square w-full rounded-xl border-2 border-ink bg-paper object-cover shadow-[8px_8px_0_0_#0D1526]"
+            />
+          )}
+        </div>
+        <div>
+          <h2 className="text-[36px] font-extrabold leading-[1.02] sm:text-[48px]">Built by Vishakan S, founder.</h2>
+          <p className="mt-4 max-w-[58ch] text-[17px] leading-relaxed text-soft">
+            Vishakan builds Java full-stack and AI products. He started Nitpick because first-round review comments are slow and repetitive, and a machine can say them in seconds. He built it end to end: the Spring Boot backend, the review pipeline, the React app and the deployment.
+          </p>
+          <p className="mt-3 max-w-[58ch] text-[17px] leading-relaxed text-soft">Questions, feedback or a project to discuss? Message him directly.</p>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Button as="a" href={LINKEDIN} target="_blank" rel="noopener noreferrer">
+              <Linkedin size={18} aria-hidden="true" />
+              Connect on LinkedIn
+              <ArrowUpRight size={16} aria-hidden="true" />
+            </Button>
+            <Button as="a" href={GITHUB_PROFILE} target="_blank" rel="noopener noreferrer" variant="ghost">
+              <GithubIcon className="h-5 w-5" />
+              GitHub profile
+              <ArrowUpRight size={16} aria-hidden="true" />
+            </Button>
+          </div>
+        </div>
       </div>
     </section>
   )
@@ -425,13 +529,13 @@ function DashboardPreview() {
 function UnderTheHood() {
   const items = [
     ['Signed webhooks', 'Every GitHub event is checked against its HMAC-SHA256 signature before anything else happens.'],
-    ['A message queue', 'Events go onto RabbitMQ and are answered with 202 straight away. Workers do the slow model calls in the background.'],
+    ['A message queue', 'Events go onto RabbitMQ and are answered straight away. Workers do the slow model calls in the background, and a Postgres backup queue means no review is lost if the broker is down.'],
     ['Safe retries', 'GitHub resends deliveries that time out. Each delivery ID is stored once, so a retry never creates a second review.'],
-    ['Any model provider', 'Spring AI sits behind one interface, so moving between Groq, Gemini and Claude is a config change.'],
+    ['Model fallbacks', 'If the AI model is retired or rate-limited, Nitpick retries and switches to a backup model automatically.'],
     ['Diffs split by file', 'Large changes are cut into per-file pieces that fit the model, skipping lockfiles and generated code.'],
-    ['Rate limits and caching', 'Redis stops one repository from using the whole model budget and reuses results for identical diffs.'],
+    ['Rate limits and caching', 'Redis limits how fast the assistant can be used and caches your repository list. If Redis is down, Nitpick keeps working.'],
   ]
-  const stack = ['Java 21', 'Spring Boot 3', 'Spring AI', 'PostgreSQL', 'RabbitMQ', 'Redis', 'React']
+  const stack = ['Java 21', 'Spring Boot 3', 'PostgreSQL', 'RabbitMQ', 'Redis', 'Groq', 'React']
   return (
     <section className="mx-auto max-w-[1120px] px-5 py-16 sm:py-24">
       <div className="grid gap-10 lg:grid-cols-[1fr_1.4fr] lg:gap-16">
@@ -488,7 +592,11 @@ function FinalCta() {
               <GithubIcon className="h-5 w-5" />
               Install on GitHub
             </Button>
-            <span className="text-[14px] text-paper/70">Free for public repositories</span>
+            <Button as="a" href={LINKEDIN} target="_blank" rel="noopener noreferrer" variant="ghostLight">
+              Talk to the founder
+              <ArrowUpRight size={16} aria-hidden="true" />
+            </Button>
+            <span className="w-full text-[14px] text-paper/70">Free for public repositories</span>
           </div>
         </div>
         <Illustration className="mx-auto w-full max-w-[340px]" />
@@ -516,6 +624,16 @@ function Footer() {
               Demo dashboard
             </Link>
           </li>
+          <li>
+            <a href={LINKEDIN} target="_blank" rel="noopener noreferrer" className="hover:underline">
+              Founder on LinkedIn
+            </a>
+          </li>
+          <li>
+            <a href={GITHUB_PROFILE} target="_blank" rel="noopener noreferrer" className="hover:underline">
+              Founder on GitHub
+            </a>
+          </li>
         </ul>
       </div>
     </footer>
@@ -530,11 +648,14 @@ export default function Landing() {
       <InPlainWords />
       <Languages />
       <BeforeAfter />
+      <Benefits />
       <HowItWorks />
       <Catches />
       <FeatureRows />
       <DashboardPreview />
       <UnderTheHood />
+      <Security />
+      <Founder />
       <Faq />
       <FinalCta />
       <Footer />

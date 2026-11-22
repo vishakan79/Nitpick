@@ -189,7 +189,15 @@ export const faq = [
     a: 'Write a rule as a plain sentence, like "Controllers must not call repositories directly." Nitpick checks every pull request against your enabled rules and flags the lines that break them.',
   },
   {
+    q: 'Does it work with private repositories?',
+    a: 'Not yet. Nitpick currently reviews public repositories. Private repository support is the next step.',
+  },
+  {
+    q: 'Who builds Nitpick?',
+    a: 'Vishakan S, a Java full-stack and AI developer. You can message him on LinkedIn from the founder section above.',
+  },
+  {
     q: 'How long does a review take?',
-    a: 'Small pull requests usually finish in under a minute. Large diffs are split by file and reviewed in parallel, so a big change does not wait in a single long queue.',
+    a: 'Small pull requests usually finish in under a minute. Large diffs are split into pieces by file and reviewed one after another, up to 8 files per pull request. If the server has been idle, the first review can take longer while it wakes up.',
   },
 ]

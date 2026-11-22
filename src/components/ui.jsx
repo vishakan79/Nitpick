@@ -35,6 +35,7 @@ const VARIANTS = {
   ghost: 'bg-transparent text-ink border-2 border-ink hover:bg-ink hover:text-paper',
   light:
     'bg-hl text-ink border-2 border-hl shadow-[4px_4px_0_0_#FAFBFE] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_#FAFBFE]',
+  ghostLight: 'bg-transparent text-paper border-2 border-paper/60 hover:bg-paper hover:text-ink',
   quiet: 'bg-sheet text-ink border border-line hover:border-ink',
 }
 
