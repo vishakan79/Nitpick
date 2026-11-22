@@ -193,6 +193,18 @@ export const faq = [
     a: 'Not yet. Nitpick currently reviews public repositories. Private repository support is the next step.',
   },
   {
+    q: 'How is this different from a linter?',
+    a: 'A linter checks fixed style rules. Nitpick reads the change the way a reviewer would: it spots a query built from user input, explains why it is dangerous, and suggests the fix. It also applies your own team rules, written as plain sentences.',
+  },
+  {
+    q: 'Why not just paste my code into a chatbot?',
+    a: 'Because nobody remembers to. Nitpick runs on every pull request automatically and comments on the exact lines inside GitHub, where your team already works. There is nothing to copy, paste or forget.',
+  },
+  {
+    q: 'Is the AI always right?',
+    a: 'No. It can miss issues and occasionally flag something that is fine, so treat it as a fast first reviewer, not a replacement for your team. It never merges or blocks anything on its own.',
+  },
+  {
     q: 'Who builds Nitpick?',
     a: 'Vishakan S, a Java full-stack and AI developer. You can message him on LinkedIn from the founder section above.',
   },

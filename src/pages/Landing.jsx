@@ -82,22 +82,29 @@ function Hero() {
   return (
     <header id="top" className="px-5 pb-6 pt-14 text-center sm:pt-20">
       <h1 className="mx-auto max-w-[17ch] text-[46px] font-extrabold leading-[0.98] sm:text-[72px]">
-        An AI reviewer for your GitHub pull requests.
+        Your pull requests, reviewed in seconds.
       </h1>
       <p className="mx-auto mt-6 max-w-[60ch] text-[18px] leading-relaxed text-soft sm:text-[19px]">
-        When someone opens a pull request, Nitpick reads the changes and comments on the exact lines that have bugs, security holes or slow database queries. Problems get fixed before the code is merged, not after it breaks in production.
+        Nitpick is an AI reviewer for GitHub. It reads every pull request the moment it opens and comments on the exact lines with security holes, bugs and slow queries, so your team fixes them before the code ships.
       </p>
       <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
         <Button as="link" to="/login">
           <GithubIcon className="h-5 w-5" />
           Install on GitHub
         </Button>
-        <Button as="link" to="/demo" variant="ghost">
-          Try the demo dashboard
+        <Button as="a" href="#proof" variant="ghost">
+          See a real review
           <ArrowRight size={17} />
         </Button>
       </div>
-      <p className="mt-4 text-[14px] text-soft">Free for public repositories. Nitpick never merges or approves anything.</p>
+      <ul className="mx-auto mt-6 flex max-w-[760px] flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[14px] text-soft">
+        {['Free for public repositories', 'Open source', 'Never merges or approves', 'Review posted in seconds'].map((t) => (
+          <li key={t} className="flex items-center gap-1.5">
+            <Check size={16} strokeWidth={3} className="text-leaf" aria-hidden="true" />
+            {t}
+          </li>
+        ))}
+      </ul>
       <div className="mx-auto mt-14 max-w-[880px] px-0 sm:px-2">
         <ReviewWindow />
       </div>
@@ -129,6 +136,87 @@ function InPlainWords() {
             </div>
           ))}
         </dl>
+      </div>
+    </section>
+  )
+}
+
+const PROOF_PR = 'https://github.com/vishakan79/testingNitpick/pull/3'
+
+function RealReview() {
+  const found = [
+    ['critical', 'SQL injection', 'ReportExporter.java:13', 'A query is built by joining a user-supplied value into the SQL text.'],
+    ['critical', 'Command injection', 'ReportExporter.java:20', 'A shell command is built from an unvalidated file name.'],
+    ['critical', 'SQL injection', 'ReportExporter.java:26', 'An id is concatenated into SQL inside a loop.'],
+    ['warning', 'N+1 query', 'ReportExporter.java:26', 'A separate database query runs for every item in the list.'],
+    ['warning', 'Hardcoded secret', 'ReportExporter.java:6', 'An API token is written directly in the source code.'],
+    ['warning', 'Swallowed exception', 'ReportExporter.java:36', 'An error is caught and ignored, so failures disappear silently.'],
+  ]
+  return (
+    <section id="proof" className="border-y-2 border-ink bg-ink text-paper">
+      <div className="mx-auto max-w-[1120px] px-5 py-16 sm:py-24">
+        <div className="grid gap-10 lg:grid-cols-[1fr_1.3fr] lg:gap-16">
+          <div>
+            <h2 className="max-w-[16ch] text-[36px] font-extrabold leading-[1.02] sm:text-[52px]">Not a mock-up. A real review.</h2>
+            <p className="mt-5 max-w-[44ch] text-[17px] leading-relaxed text-paper/75">
+              We opened a pull request with a deliberately flawed file. Nitpick found six problems and posted them on the exact lines in about three seconds. Open the pull request on GitHub and check every comment yourself.
+            </p>
+            <dl className="mt-8 grid grid-cols-3 gap-4">
+              {[
+                ['6', 'issues flagged'],
+                ['~3s', 'to review'],
+                ['3', 'critical'],
+              ].map(([n, l]) => (
+                <div key={l} className="border-t-2 border-hl pt-3">
+                  <dt className="font-display text-[36px] font-extrabold leading-none text-hl">{n}</dt>
+                  <dd className="mt-1 text-[14px] text-paper/70">{l}</dd>
+                </div>
+              ))}
+            </dl>
+            <Button as="a" href={PROOF_PR} target="_blank" rel="noopener noreferrer" variant="light" className="mt-8">
+              <GithubIcon className="h-5 w-5" />
+              Open the pull request
+              <ArrowUpRight size={16} aria-hidden="true" />
+            </Button>
+            <p className="mt-3 text-[13px] text-paper/60">A test repository, 40 lines of code. This is the first review on the pull request; later commits were reviewed too. Timing measured on a warm server.</p>
+          </div>
+          <ul className="divide-y divide-paper/15 rounded-lg border border-paper/20 bg-paper/5">
+            {found.map(([sev, t, where, d]) => (
+              <li key={where + t} className="p-5">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className={`rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${sev === 'critical' ? 'bg-pen text-white' : 'bg-hl text-ink'}`}>
+                    {sev === 'critical' ? 'Critical' : 'Warning'}
+                  </span>
+                  <span className="font-display text-[18px] font-bold">{t}</span>
+                  <span className="ml-auto font-mono text-[12.5px] text-paper/60">{where}</span>
+                </div>
+                <p className="mt-2 text-[15px] leading-relaxed text-paper/75">{d}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function Audience() {
+  const people = [
+    ['Startups and small teams', 'No senior reviewer free? Nitpick gives every pull request a consistent first pass, so the team ships faster without lowering the bar.'],
+    ['Open source maintainers', 'Contributors get instant, specific feedback. You spend your time on design and direction instead of repeating the same comments.'],
+    ['Students and bootcamp learners', 'Get a real code review on every project, with explanations of why something is a problem and how to fix it.'],
+    ['Solo developers', 'Nobody to review your code? Nitpick is the second pair of eyes that never gets tired or busy.'],
+  ]
+  return (
+    <section aria-labelledby="audience" className="mx-auto max-w-[1120px] px-5 py-16 sm:py-24">
+      <h2 id="audience" className="max-w-[20ch] text-[36px] font-extrabold leading-[1.02] sm:text-[52px]">Made for people who ship code.</h2>
+      <div className="mt-12 grid gap-x-12 gap-y-10 md:grid-cols-2">
+        {people.map(([t, d]) => (
+          <div key={t} className="border-t-2 border-ink pt-4">
+            <h3 className="font-display text-[22px] font-bold leading-tight">{t}</h3>
+            <p className="mt-2 max-w-[52ch] text-[16px] leading-relaxed text-soft">{d}</p>
+          </div>
+        ))}
       </div>
     </section>
   )
@@ -586,7 +674,7 @@ function FinalCta() {
     <section className="px-5 pb-16 sm:pb-24">
       <div className="mx-auto grid max-w-[1120px] items-center gap-8 overflow-hidden rounded-xl border-2 border-ink bg-ink p-8 text-paper sm:p-12 md:grid-cols-[1.3fr_1fr]">
         <div>
-          <h2 className="max-w-[16ch] text-[38px] font-extrabold leading-[1.02] sm:text-[56px]">Let Nitpick read your next pull request first.</h2>
+          <h2 className="max-w-[16ch] text-[38px] font-extrabold leading-[1.02] sm:text-[56px]">Your next pull request deserves a second pair of eyes.</h2>
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Button as="link" to="/login" variant="light">
               <GithubIcon className="h-5 w-5" />
@@ -646,9 +734,10 @@ export default function Landing() {
       <Nav />
       <Hero />
       <InPlainWords />
-      <Languages />
+      <RealReview />
       <BeforeAfter />
       <Benefits />
+      <Audience />
       <HowItWorks />
       <Catches />
       <FeatureRows />
