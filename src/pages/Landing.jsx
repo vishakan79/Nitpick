@@ -78,10 +78,10 @@ function Hero() {
   return (
     <header id="top" className="px-5 pb-6 pt-14 text-center sm:pt-20">
       <h1 className="mx-auto max-w-[17ch] text-[46px] font-extrabold leading-[0.98] sm:text-[72px]">
-        Nitpick reads every pull request before your teammates do.
+        An AI reviewer for your GitHub pull requests.
       </h1>
-      <p className="mx-auto mt-6 max-w-[54ch] text-[18px] leading-relaxed text-soft sm:text-[19px]">
-        It comments on the exact lines with bugs, security holes and slow queries, usually within a minute of the pull request opening.
+      <p className="mx-auto mt-6 max-w-[60ch] text-[18px] leading-relaxed text-soft sm:text-[19px]">
+        When someone opens a pull request, Nitpick reads the changes and comments on the exact lines that have bugs, security holes or slow database queries. Problems get fixed before the code is merged, not after it breaks in production.
       </p>
       <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
         <Button as="link" to="/login">
@@ -98,6 +98,35 @@ function Hero() {
         <ReviewWindow />
       </div>
     </header>
+  )
+}
+
+function InPlainWords() {
+  const rows = [
+    ['What is it?', 'A code reviewer that runs by itself. Connect your GitHub repositories once, and every pull request gets a review without anyone asking for it.'],
+    [
+      'What problem does it solve?',
+      'Human reviewers are busy, so pull requests wait for days and simple mistakes slip through: a query built from user input, a missing null check, a password typed into the code. Nitpick finds these within seconds of the pull request opening.',
+    ],
+    ['Who is it for?', 'Developers and small teams who want a fast first review: students building projects, open source maintainers, and teams without a free senior reviewer.'],
+    ['What does it not do?', 'It never merges, approves or edits your code. It only leaves comments, and your team decides what to fix.'],
+  ]
+  return (
+    <section aria-labelledby="plain-words" className="mx-auto max-w-[1120px] px-5 pb-6 pt-16 sm:pt-24">
+      <div className="grid gap-10 md:grid-cols-[1fr_1.4fr] md:gap-16">
+        <h2 id="plain-words" className="max-w-[14ch] text-[36px] font-extrabold leading-[1.02] sm:text-[52px]">
+          What Nitpick does, in plain words.
+        </h2>
+        <dl className="divide-y divide-line border-y border-line">
+          {rows.map(([q, a]) => (
+            <div key={q} className="py-5">
+              <dt className="font-display text-[20px] font-bold leading-tight">{q}</dt>
+              <dd className="mt-2 max-w-[60ch] text-[16px] leading-relaxed text-soft">{a}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
   )
 }
 
@@ -498,6 +527,7 @@ export default function Landing() {
     <div>
       <Nav />
       <Hero />
+      <InPlainWords />
       <Languages />
       <BeforeAfter />
       <HowItWorks />
